@@ -1,3 +1,9 @@
+Udacity student projects
+============
+
+Projects created by students of Udacity, the XXI century university.
+
+
 classic-games
 =============
 
