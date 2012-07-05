@@ -6,7 +6,6 @@ import urllib
 import urllib2
 import json
 import re
-from itertools import ifilter
 import getpass
 import os
 import time
@@ -76,13 +75,6 @@ def setSessionHandler():
     # get csrf_token - used for logging in
     csrf_token = re.findall(r'csrf_token = "([^"]+)', uMainSiteHTML)[0]
 
-def sanitize(path):
-    """ Sanitizes unit names """
-    illegalChars = r'<>:"/\|?*'
-    for ch in illegalChars:
-        path = path.replace(ch, "")
-    return path
-
 # -- Utility functions --
 def jsonFromURL(url, data=None):
     return json.loads(urllib2.urlopen(url, data).read())
@@ -97,6 +89,16 @@ def findPair(key, value, json_array):
 
 def ajaxURL(query):
     return ajaxRoot + "?" + urllib.quote(json.dumps(query))
+
+def sanitize(path):
+    """ Sanitizes unit names so they can be used as folder paths """
+    illegalChars = r'<>:"/\|?*'
+    for ch in illegalChars:
+        path = path.replace(ch, "")
+    return path
+
+def stripHTML(text):
+    return re.sub(r"<.*?>", "", text)
 
 # -- Functions related to getting course-related info --
 def courseJSON(courseID):
@@ -114,10 +116,10 @@ def courseJSON(courseID):
 def unitJSON(courseID, unitName):
     """ Returns the JSON of this unit from the API """
     courseJS = courseJSON(courseID)
-    
-    unitJS = next(x for x in courseJS['course_rev']['units'] \
-                  if x['name'] == unitName)
-    return unitJS
+    for unit in courseJS['course_rev']['units']: 
+        if unit['name'] == unitName:
+            return unit
+    raise ValueError("No unit named %s found!" % unitName)
 
 def programPath(unitJSON, n):
     """ Given the JSON covering the unit, returns the nth part programming quiz path """
@@ -153,8 +155,8 @@ def downloadProgram(courseID, unit, part):
     if not os.path.exists(coursePath):
         os.mkdir(coursePath)
 
-    unit = sanitize(unit)
-    unitPath = os.path.join(coursePath, unit)
+    unitSanitized = sanitize(unit)
+    unitPath = os.path.join(coursePath, unitSanitized)
         
     if not os.path.exists(unitPath):
         os.mkdir(unitPath)
@@ -207,12 +209,13 @@ def submit(program_file):
     status = submitSolution(program_text, course, unit, part)
 
 def submitSolution(program_text, courseID, unit, part):
+    print("Submitting your solution for {0} {1} Part {2}\n".format(
+                                                    courseID, unit, part))
     global logged_in
     if not logged_in:
         log_in()
     path = programPath(unitJSON(courseID, unit), part)
     # Send the program as a query
-    print("Submitting your solution for CS{0} {1} Part {2}".format(courseID, unit, part))
     query = {"data":{"usercode":program_text,
                      "op":"submit",
                      "path":path},
@@ -230,7 +233,7 @@ def submitSolution(program_text, courseID, unit, part):
         specifics = jsonFromURL(queryURL)
         if specifics['payload']['status'] != 'queued':
             print("\nThe server responded:")
-            print(specifics['payload']['comment'])
+            print(stripHTML(specifics['payload']['comment']))
             return specifics['payload']
         print("Your program is still being graded. Trying again in 1 second")
         time.sleep(1)
