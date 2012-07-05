@@ -16,21 +16,23 @@ ajaxRoot = r"http://www.udacity.com/ajax"
 
 coursePath = {
     # Intro to Computer Science. Building a Search Engine
-    101: r"Course/cs101/CourseRev/apr2012",
+    "cs101": r"Course/cs101/CourseRev/apr2012",
     # Web Application Engineering. How to Build a Blog
-    253: r"Course/cs253/CourseRev/apr2012",
+    "cs253": r"Course/cs253/CourseRev/apr2012",
     # Programming Languages. Building a Web Browser
-    262: r'Course/cs262/CourseRev/apr2012',
+    "cs262": r'Course/cs262/CourseRev/apr2012',
     # Artificial Intelligence. Programming a Robotic Car
-    373: r"Course/cs373/CourseRev/apr2012",
+    "cs373": r"Course/cs373/CourseRev/apr2012",
     # Design of Computer Programs. Programming Principles
-    212: r"Course/cs212/CourseRev/apr2012",
+    "cs212": r"Course/cs212/CourseRev/apr2012",
     # Algorithms. Crunching Social Networks
-    215: r"Course/cs215/CourseRev/1",
+    "cs215": r"Course/cs215/CourseRev/1",
     # Applied Cryptography. Science of Secrets
-    387: r"Course/cs387/CourseRev/apr2012",
+    "cs387": r"Course/cs387/CourseRev/apr2012",
     # Software Testing. How to Make Software Fail
-    258: r"Course/cs258/CourseRev/1"
+    "cs258": r"Course/cs258/CourseRev/1",
+    # Statistics 101
+    "st101": r"Course/st101/CoursRev/1"
 }
 
 courseCache = {}
@@ -194,7 +196,7 @@ def identifyFile(first_line):
         course, unit, part = first_line[2:].strip().split(' ; ')
     except:
         raise ValueError("First line doesn't identify file")
-    return int(course), unit, int(part)
+    return course, unit, int(part)
 
 def submit(program_file):
     """ Submits a file, trying to identify it by its first line """
@@ -250,9 +252,8 @@ def main():
                         action='store_true',
                         help="download a programming quiz")
     parser.add_argument("-c", "--course",
-                        type=int,
                         metavar="CID",
-                        help="Course ID (csCID)")
+                        help="Course ID (eg cs262, st101)")
     parser.add_argument("-u", "--unit",
                         help='Unit title (eg "Unit 5", "Homework 2")')
     parser.add_argument("-p", "--part",
@@ -262,6 +263,10 @@ def main():
                         help="path to file")
     
     args = parser.parse_args()
+
+    if args.course and args.course not in coursePath:
+        print "Course " + args.course + " is not supported!"
+        return
     
     if args.submit and not args.download:
         setSessionHandler()

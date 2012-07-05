@@ -13,23 +13,23 @@ A small command-line application to make downloading programming quizzes and sub
 
 Downloading all programming quizzes for course CS262 (Downloaded files will be placed as ./Course/UnitName/Part.py where . is current folder)
 
-    python udacity.py --download --course 262
+    python pquiz.py --download --course cs262
                      
 
 Submitting solution to CS262 Problem Set 5 Quiz 5 (you will be asked to log in)
 
-    python udacity.py --submit --file "./262/Problem Set 5/5.py"
+    python pquiz.py --submit --file "./cs262/Problem Set 5/5.py"
 
 OR (if the file wasn't downloaded using this tool)
 
-    python udacity.py --submit --file "./262/Problem Set 5/5.py" --course 262 --unit "Problem Set 5" --part 5
+    python pquiz.py --submit --file "./cs262/Problem Set 5/5.py" --course cs262 --unit "Problem Set 5" --part 5
 
     
 Downloading all programming quizzes for course CS262 Problem set 5
 
-    python udacity.py --download --course 262 --unit "Problem Set 5"
+    python pquiz.py --download --course cs262 --unit "Problem Set 5"
 
 
 Downloading Part 5 of CS262 Problem set 5
 
-    python udacity.py --download --course 262 --unit "Problem Set 5" --part 5
+    python pquiz.py --download --course cs262 --unit "Problem Set 5" --part 5
