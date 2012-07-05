@@ -32,7 +32,7 @@ coursePath = {
     # Software Testing. How to Make Software Fail
     "cs258": r"Course/cs258/CourseRev/1",
     # Statistics 101
-    "st101": r"Course/st101/CoursRev/1"
+    "st101": r"Course/st101/CourseRev/1"
 }
 
 courseCache = {}
