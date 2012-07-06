@@ -18,10 +18,10 @@ class Character(Entity):
         self.hp = hp
         self.items = []
     
-    def moveLeft(self):
+    def move_left(self):
         self.x -= 1
     
-    def moveRight(self):
+    def move_right(self):
         self.x += 1
 
     def attack(self, enemy):
@@ -32,7 +32,7 @@ class Wizard(Character):
     def __init__(self, x, y, hp):
         Character.__init__(self, x, y, hp)
     
-    def castSpell(self, enemy):
+    def cast_spell(self, enemy):
         if abs(enemy.x - self.x) == 1 and (enemy.y == self.y):
             enemy.remove()
 
@@ -40,7 +40,7 @@ class Archer(Character):
     def __init__(self, x, y, hp):
         Character.__init__(self, x, y, hp)
     
-    def rangeAttack(self, enemy):
+    def range_attack(self, enemy):
         if abs(enemy.x - self.x) <= 5 and (enemy.y == self.y):
             enemy.hp -= 5
 

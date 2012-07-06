@@ -26,10 +26,10 @@ if __name__ == '__main__':
         if c == "x":
             break
         elif c == "r":
-            student.moveRight()
+            student.move_right()
             print "You now are at location: ", student.x, student.y
         elif c =="l":
-            student.moveLeft()
+            student.move_left()
         elif c == "gps":
             print "Your GPS location: ", student.x, student.y
             print "Bug GPS location: ", bug1.x, bug1.y
