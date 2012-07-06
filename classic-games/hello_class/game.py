@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # game.py - simple game to demonstrate classes and objects
 
-world = [[None] * 100] * 100
+world = [[None for x in range(100)] for y in range(100)]
 
 class Entity:
     def __init__(self, x, y):
