@@ -12,6 +12,7 @@ import time
 
 rootURL = r"http://www.udacity.com"
 ajaxRoot = r"http://www.udacity.com/ajax"
+cookieFile = r".\cookie.lwp"
 
 coursePath = {
     # Intro to Computer Science. Building a Search Engine
@@ -38,10 +39,12 @@ courseCache = {}
 csrf_token = None
 uVersion = None
 logged_in = False
+cookie_jar = None
 
 def log_in():
-    """ Logs you in so you can submit a problem """
-    global logged_in
+    """ Logs you in so you can submit a solution. Saves
+        the cookie on disk. """
+    global logged_in, cookie_jar
     email = raw_input("Email: ")
     # Try to ask for password in a way that shoulder-surfers can't handle
     pw = getpass.getpass("Password: ")
@@ -60,16 +63,28 @@ def log_in():
         raise
     if 'error' in answer['payload']:
         raise ValueError("Failed to log in!")
+
+    cookie_jar.save()
     print("Logged in successfully!\n")
     logged_in = True
         
 def setSessionHandler():
-    """ Gets information from udacity home page to successfully query courses """
-    global uVersion, csrf_token
-    print("Accessing udacity main page...\n")
-    cj = cookielib.CookieJar()
-    opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
+    """ Gets information from udacity home page to successfully
+        query courses.
+        If user has saved a cookie on disk, tries to use that. """
+    global uVersion, csrf_token, cookie_jar, logged_in
+
+    cookie_jar = cookielib.LWPCookieJar(cookieFile)
+    if os.access(cookieFile, os.F_OK):
+        logged_in = True
+        cookie_jar.load()
+        print("Found a cookie!")
+        
+    opener = urllib2.build_opener(
+            urllib2.HTTPCookieProcessor(cookie_jar))
     urllib2.install_opener(opener)
+
+    print("Accessing udacity main page...\n")
     uMainSiteHTML = urllib2.urlopen(rootURL).read()
     # get uVersion - used when querying
     uVersion = re.findall(r"js/udacity.js[?]([0-9]+)", uMainSiteHTML)[0]
@@ -121,7 +136,7 @@ def unitJSON(courseID, unitName):
     for unit in courseJS['course_rev']['units']: 
         if unit['name'] == unitName:
             return unit
-    raise ValueError("No unit named %s found!" % unitName)
+    raise ValueError("No unit named {0} found!".format(unitName))
 
 def programPath(unitJSON, n):
     """ Given the JSON covering the unit, returns the nth part programming quiz path """
@@ -218,7 +233,7 @@ def submitSolution(program_text, courseID, unit, part):
         log_in()
     path = programPath(unitJSON(courseID, unit), part)
     # Send the program as a query
-    print("Sending a query to the servers\n")
+    print("Sending sending your program to the servers...\n")
     query = {"data":{"usercode":program_text,
                      "op":"submit",
                      "path":path},
@@ -245,10 +260,13 @@ def submitSolution(program_text, courseID, unit, part):
 def main():
     import argparse
 
-    epilog = """Example:\n\tpquiz.py --submit --file 1.py
-\tpquiz.py --download --course 212"""
+    epilog = """Example:
+    pquiz.py --submit --file 1.py OR
+    pquiz.py -s -f 1.py
+    pquiz.py --download --course 212"""
     parser = argparse.ArgumentParser(description= \
-                "Tool to help download and upload programming quizzes from Udacity's CS courses", 
+                "Tool to help download and upload programming quizzes "+
+                "from Udacity's CS courses", 
                 epilog = epilog,
                 formatter_class = argparse.RawDescriptionHelpFormatter)
     parser.add_argument("-s", "--submit",
