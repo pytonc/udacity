@@ -1,51 +1,12 @@
 #!/usr/bin/env python
 # game.py - simple game to demonstrate classes and objects
-
-world = [[None] * 100] * 100
-
-class Entity:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-        world[x][y] = self
-    
-    def remove(self):
-        world[self.x][self.y] = None
-
-class Character(Entity):
-    def __init__(self, x, y, hp):
-        Entity.__init__(self, x, y)
-        self.hp = hp
-        self.items = []
-    
-    def moveLeft(self):
-        self.x -= 1
-    
-    def moveRight(self):
-        self.x += 1
-
-    def attack(self, enemy):
-        if abs(enemy.x - self.x) == 1 and (enemy.y == self.y):
-            enemy.hp -= 10
-
-class Wizard(Character):
-    def __init__(self, x, y, hp):
-        Character.__init__(self, x, y, hp)
-    
-    def castSpell(self, enemy):
-        if abs(enemy.x - self.x) == 1 and (enemy.y == self.y):
-            enemy.remove()
-
-class Archer(Character):
-    def __init__(self, x, y, hp):
-        Character.__init__(self, x, y, hp)
-    
-    def rangeAttack(self, enemy):
-        if abs(enemy.x - self.x) <= 5 and (enemy.y == self.y):
-            enemy.hp -= 5
+from classes import *
 
 if __name__ == '__main__':
     #initializing some entities
+
+    #campus = World(100, 100)
+
     student = Character(10, 10, 100)
     bug1 = Character(12, 10, 100)
     print """Welcome to 'Hello, Class' game
@@ -54,6 +15,7 @@ if __name__ == '__main__':
     l - move left
     a - attack
     gps - print location
+    x - exit
     
     There is a Bug 2 steps to the right from you.
     You should probably do something about it!
@@ -61,13 +23,13 @@ if __name__ == '__main__':
 
     while True:
         c = raw_input("You > ")
-        if c == "exit":
+        if c == "x":
             break
         elif c == "r":
-            student.moveRight()
+            student.move_right()
             print "You now are at location: ", student.x, student.y
         elif c =="l":
-            student.moveLeft()
+            student.move_left()
         elif c == "gps":
             print "Your GPS location: ", student.x, student.y
             print "Bug GPS location: ", bug1.x, bug1.y
