@@ -45,6 +45,7 @@ def log_in():
     email = raw_input("Email: ")
     # Try to ask for password in a way that shoulder-surfers can't handle
     pw = getpass.getpass("Password: ")
+    print ("") # Empty line for clarity
     data = {"data":
                 {"email":email,
                  "password":pw},
@@ -59,12 +60,13 @@ def log_in():
         raise
     if 'error' in answer['payload']:
         raise ValueError("Failed to log in!")
-    print("Logged in successfully!")
+    print("Logged in successfully!\n")
     logged_in = True
         
 def setSessionHandler():
     """ Gets information from udacity home page to successfully query courses """
     global uVersion, csrf_token
+    print("Accessing udacity main page...\n")
     cj = cookielib.CookieJar()
     opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
     urllib2.install_opener(opener)
@@ -216,6 +218,7 @@ def submitSolution(program_text, courseID, unit, part):
         log_in()
     path = programPath(unitJSON(courseID, unit), part)
     # Send the program as a query
+    print("Sending a query to the servers\n")
     query = {"data":{"usercode":program_text,
                      "op":"submit",
                      "path":path},
@@ -242,7 +245,7 @@ def submitSolution(program_text, courseID, unit, part):
 def main():
     import argparse
 
-    epilog = """Example:\n\tpquiz.py --submit -c 262 -u "Unit 5" -p 11
+    epilog = """Example:\n\tpquiz.py --submit --file 1.py
 \tpquiz.py --download --course 212"""
     parser = argparse.ArgumentParser(description= \
                 "Tool to help download and upload programming quizzes from Udacity's CS courses", 
