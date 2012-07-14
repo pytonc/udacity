@@ -27,10 +27,7 @@ class Entity:
         world.map[self.x][self.y] = None
 
     def distance(self, other):
-        dist=[]
-        dist.append(abs(other.x-self.x))
-        dist.append(other.y==self.y)
-        return dist
+        return abs(other.x - self.x), abs(other.y - self.y)
 
 class Character(Entity):
     def __init__(self, x, y, hp):
@@ -72,8 +69,8 @@ class Character(Entity):
             self.occupy(self.x, self.y)
 
     def attack(self, enemy):
-        #if abs(enemy.x - self.x) == 1 and (enemy.y == self.y):
-        if self.distance(enemy)[0] == 1 and self.distance(enemy)[1]:
+        dist = self.distance(enemy)
+        if dist == (0, 1) or dist == (1, 0):
             enemy.hp -= 10
 
 class Enemy(Character):
@@ -88,8 +85,8 @@ class Wizard(Character):
         Character.__init__(self, x, y, hp)
     
     def cast_spell(self, enemy):
-        #if abs(enemy.x - self.x) == 1 and (enemy.y == self.y):
-        if self.distance(enemy)[0] == 1 and self.distance(enemy)[1]:
+        dist = self.distance(enemy)
+        if dist == (0, 1) or dist == (1, 0):
             enemy.remove()
 
 class Archer(Character):
@@ -97,7 +94,7 @@ class Archer(Character):
         Character.__init__(self, x, y, hp)
     
     def range_attack(self, enemy):
-        #if abs(enemy.x - self.x) <= 5 and (enemy.y == self.y):
-        if self.distance(enemy)[0] <= 5 and self.distance(enemy)[1]:
+        dist = self.distance(enemy)
+        if (dist[0] <= 5 and dist[1] == 0) or (dist[0] == 0 and dist[1] <= 5):
             enemy.hp -= 5
 
