@@ -14,6 +14,8 @@ if __name__ == '__main__':
     Available commands are:
     r - move right
     l - move left
+    u - move up
+    d - move down
     a - attack
     gps - print location
     x - exit
@@ -31,6 +33,13 @@ if __name__ == '__main__':
             print "You now are at location: ", student.x, student.y
         elif c =="l":
             student.move("left")
+            print "You now are at location: ", student.x, student.y
+        elif c =="u":
+            student.move("up")
+            print "You now are at location: ", student.x, student.y
+        elif c =="d":
+            student.move("down")
+            print "You now are at location: ", student.x, student.y
         elif c == "gps":
             print "Your GPS location: ", student.x, student.y
             print "Bug GPS location: ", bug1.x, bug1.y
