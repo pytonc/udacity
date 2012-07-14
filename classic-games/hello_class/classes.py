@@ -108,6 +108,12 @@ class Wizard(Character):
         dist = self.distance(enemy)
         if dist == (0, 1) or dist == (1, 0):
             enemy.remove()
+    
+    def cast_hp_stealer(self, enemy):
+        dist = self.distance(enemy)
+        if dist == (0,3) or dist == (0,3):
+            enemy.harm(3)
+            self.hp += 3
 
 class Archer(Character):
     def __init__(self, x, y, hp):
