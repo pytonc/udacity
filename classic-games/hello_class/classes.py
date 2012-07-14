@@ -27,51 +27,50 @@ class Entity:
         world.map[self.x][self.y] = None
 
     def distance(self, other):
-        dist=[]
-        dist.append(abs(other.x-self.x))
-        dist.append(other.y==self.y)
-        return dist
+        return abs(other.x - self.x), abs(other.y - self.y)
 
 class Character(Entity):
     def __init__(self, x, y, hp):
         Entity.__init__(self, x, y)
         self.hp = hp
         self.items = []
-    
+
+    def _direction_to_dxdy(self, direction):
+        """Convert a string representing movement direction into a tuple
+        (dx, dy), where 'dx' is the size of step in the 'x' direction and
+        'dy' is the size of step in the 'y' direction."""
+        dx, dy = 0, 0
+        if direction == 'left':
+            dx = -1
+        elif direction == 'right':
+            dx = 1
+        elif direction == 'up':
+            dy = 1
+        elif direction == 'down':
+            dy = -1
+        else:
+            print "Please enter a valid direction: 'left', 'right', 'up', or 'down'"
+        return dx, dy
+
     def move(self, direction):
         '''
             Moves a character one space in a given direction. Takes as input a 
             direction 'left', 'right', 'up' or 'down'. Allows wrapping of the 
             world map (eg. moving left from x = 0 moves you to x = -1)
         '''
-        x, y = 0, 0
-        if direction == 'left':
-            x = -1
-        elif direction == 'right':
-            x = 1
-        elif direction == 'up':
-            y = 1
-        elif direction == 'down':
-            y = -1
-        else:
-            print "Please enter a valid direction: 'left', 'right', 'up', or 'down'"    
-        if world.is_occupied(((self.x + x) % world.width),((self.y + y) % world.height)):
+        dx, dy = self._direction_to_dxdy(direction)
+        new_x = (self.x + dx) % world.width
+        new_y = (self.y + dy) % world.height
+        if world.is_occupied(new_x, new_y):
             print 'Position is occupied, try another move.'
         else:
             self.remove()
-            self.x = (self.x + x) % 100
-            self.y = (self.y + y) % 100
+            self.x, self.y = new_x, new_y
             self.occupy(self.x, self.y)
 
-#    def move_left(self):
-#        self.x -= 1
-    
-#    def move_right(self):
-#        self.x += 1
-
     def attack(self, enemy):
-        #if abs(enemy.x - self.x) == 1 and (enemy.y == self.y):
-        if self.distance(enemy)[0] == 1 and self.distance(enemy)[1]:
+        dist = self.distance(enemy)
+        if dist == (0, 1) or dist == (1, 0):
             enemy.hp -= 10
 
 class Enemy(Character):
@@ -86,8 +85,8 @@ class Wizard(Character):
         Character.__init__(self, x, y, hp)
     
     def cast_spell(self, enemy):
-        #if abs(enemy.x - self.x) == 1 and (enemy.y == self.y):
-        if self.distance(enemy)[0] == 1 and self.distance(enemy)[1]:
+        dist = self.distance(enemy)
+        if dist == (0, 1) or dist == (1, 0):
             enemy.remove()
 
 class Archer(Character):
@@ -95,7 +94,7 @@ class Archer(Character):
         Character.__init__(self, x, y, hp)
     
     def range_attack(self, enemy):
-        #if abs(enemy.x - self.x) <= 5 and (enemy.y == self.y):
-        if self.distance(enemy)[0] <= 5 and self.distance(enemy)[1]:
+        dist = self.distance(enemy)
+        if (dist[0] <= 5 and dist[1] == 0) or (dist[0] == 0 and dist[1] <= 5):
             enemy.hp -= 5
 
