@@ -4,21 +4,35 @@ class WorldMap(object):
     def __init__(self, width, height):
         self.width = width
         self.height = height
-        self.map = [[None for x in range(self.width)] for y in range(self.height)]
+        self.map = [[None for y in range(self.height)] for x in range(self.width)]
 
     def is_occupied(self, x, y):
         ''' Checks if a given space on the map and returns True if occupied. '''
         return self.map[x][y] is not None
 
-world = WorldMap(100, 100)
+    def print_map(self):
+        print '+' * (self.width + 2)
+        for y in range(self.height - 1, 0, -1):
+            line = '+'
+            for x in range(self.width):
+                cell = self.map[x][y]
+                if cell is None:
+                    line += ' '
+                else:
+                    line += cell.image
+            print line + '+'
+        print '+' * (self.width + 2)
+
+world = WorldMap(50, 22)
 
 #world = [[None for x in range(100)] for y in range(100)]
 
 class Entity:
-    def __init__(self, x, y):
+    def __init__(self, x, y, image):
         self.x = x
         self.y = y
         world.map[x][y] = self
+        self.image = image
     
     def occupy(self, x, y):
         world.map[x][y] = self
@@ -30,8 +44,8 @@ class Entity:
         return abs(other.x - self.x), abs(other.y - self.y)
 
 class Character(Entity):
-    def __init__(self, x, y, hp):
-        Entity.__init__(self, x, y)
+    def __init__(self, x, y, image, hp):
+        Entity.__init__(self, x, y, image)
         self.hp = hp
         self.items = []
 
@@ -71,18 +85,24 @@ class Character(Entity):
     def attack(self, enemy):
         dist = self.distance(enemy)
         if dist == (0, 1) or dist == (1, 0):
-            enemy.hp -= 10
+            enemy.harm(10)
+
+    def harm(self, damage):
+        self.hp -= damage
+        if self.hp <= 0:
+            self.image = 'X'
+            self.hp = 0
 
 class Enemy(Character):
     def __init__(self, x, y, hp):
-        Character.__init__(self, x, y, hp)
+        Character.__init__(self, x, y, 'B', hp)
 
     def challenge(self, other):
         print "Let's fight!"
 
 class Wizard(Character):
     def __init__(self, x, y, hp):
-        Character.__init__(self, x, y, hp)
+        Character.__init__(self, x, y, 'W', hp)
     
     def cast_spell(self, enemy):
         dist = self.distance(enemy)
@@ -91,10 +111,9 @@ class Wizard(Character):
 
 class Archer(Character):
     def __init__(self, x, y, hp):
-        Character.__init__(self, x, y, hp)
+        Character.__init__(self, x, y, 'A', hp)
     
     def range_attack(self, enemy):
         dist = self.distance(enemy)
         if (dist[0] <= 5 and dist[1] == 0) or (dist[0] == 0 and dist[1] <= 5):
-            enemy.hp -= 5
-
+            enemy.harm(5)
