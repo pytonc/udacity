@@ -85,7 +85,13 @@ class Character(Entity):
     def attack(self, enemy):
         dist = self.distance(enemy)
         if dist == (0, 1) or dist == (1, 0):
-            enemy.hp -= 10
+            enemy.harm(10)
+
+    def harm(self, damage):
+        self.hp -= damage
+        if self.hp <= 0:
+            self.image = 'X'
+            self.hp = 0
 
 class Enemy(Character):
     def __init__(self, x, y, hp):
@@ -110,5 +116,4 @@ class Archer(Character):
     def range_attack(self, enemy):
         dist = self.distance(enemy)
         if (dist[0] <= 5 and dist[1] == 0) or (dist[0] == 0 and dist[1] <= 5):
-            enemy.hp -= 5
-
+            enemy.harm(5)
