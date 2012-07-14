@@ -8,7 +8,8 @@ if __name__ == '__main__':
     #campus = World(100, 100)
 
     student = Character(10, 10, 100)
-    bug1 = Character(12, 10, 100)
+    engineer = Wizard(20, 10, 100)
+    bug1 = Enemy(12, 10, 100)
     print """Welcome to 'Hello, Class' game
     Available commands are:
     r - move right
@@ -26,10 +27,10 @@ if __name__ == '__main__':
         if c == "x":
             break
         elif c == "r":
-            student.move_right()
+            student.move("right")
             print "You now are at location: ", student.x, student.y
         elif c =="l":
-            student.move_left()
+            student.move("left")
         elif c == "gps":
             print "Your GPS location: ", student.x, student.y
             print "Bug GPS location: ", bug1.x, bug1.y
@@ -37,6 +38,6 @@ if __name__ == '__main__':
             student.attack(bug1)
             print "Bug now has: ", bug1.hp, " hp left"
         else:
-            print "Unknown command. 'exit' to exit the game"
+            print "Unknown command. 'x' to exit the game"
 
 
