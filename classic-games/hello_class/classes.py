@@ -10,15 +10,29 @@ class WorldMap(object):
         ''' Checks if a given space on the map and returns True if occupied. '''
         return self.map[x][y] is not None
 
-world = WorldMap(100, 100)
+    def print_map(self):
+        print '+' * (self.width + 2)
+        for y in range(self.height - 1, 0, -1):
+            line = '+'
+            for x in range(self.width):
+                cell = self.map[x][y]
+                if cell is None:
+                    line += ' '
+                else:
+                    line += cell.image
+            print line + '+'
+        print '+' * (self.width + 2)
+
+world = WorldMap(50, 22)
 
 #world = [[None for x in range(100)] for y in range(100)]
 
 class Entity:
-    def __init__(self, x, y):
+    def __init__(self, x, y, image):
         self.x = x
         self.y = y
         world.map[x][y] = self
+        self.image = image
     
     def occupy(self, x, y):
         world.map[x][y] = self
@@ -30,8 +44,8 @@ class Entity:
         return abs(other.x - self.x), abs(other.y - self.y)
 
 class Character(Entity):
-    def __init__(self, x, y, hp):
-        Entity.__init__(self, x, y)
+    def __init__(self, x, y, image, hp):
+        Entity.__init__(self, x, y, image)
         self.hp = hp
         self.items = []
 
@@ -75,14 +89,14 @@ class Character(Entity):
 
 class Enemy(Character):
     def __init__(self, x, y, hp):
-        Character.__init__(self, x, y, hp)
+        Character.__init__(self, x, y, 'B', hp)
 
     def challenge(self, other):
         print "Let's fight!"
 
 class Wizard(Character):
     def __init__(self, x, y, hp):
-        Character.__init__(self, x, y, hp)
+        Character.__init__(self, x, y, 'W', hp)
     
     def cast_spell(self, enemy):
         dist = self.distance(enemy)
@@ -91,7 +105,7 @@ class Wizard(Character):
 
 class Archer(Character):
     def __init__(self, x, y, hp):
-        Character.__init__(self, x, y, hp)
+        Character.__init__(self, x, y, 'A', hp)
     
     def range_attack(self, enemy):
         dist = self.distance(enemy)
