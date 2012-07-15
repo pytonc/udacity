@@ -6,6 +6,9 @@ import getopt, sys
 
 def print_help():
     print sys.argv[0] + ' -h|--help -g|--gui=sdl'
+    print 'gui accept the following values:'
+    print 'sdl\t will use the pygame/SDL frontend'
+    print 'txt\t will use the embedded ASCII frontend'
 
 DIRECTIONS = {
     "r": "right",
@@ -20,10 +23,12 @@ if __name__ == '__main__':
 
     # Read command line parameter
     try:
-        opts, args = getopt.getopt(sys.argv, "hg:",["help", "guy="])
+        opts, args = getopt.getopt(sys.argv[1:], "hg:",["help", "gui="])
     except getopt.GetoptError:
         print_help()
         sys.exit(1)
+
+    print len(opts), len(args)
 
     for opt, arg in opts:
         if opt in ('-h', '--help'):
@@ -31,6 +36,10 @@ if __name__ == '__main__':
             sys.exit()
         elif opt in ("-g", "--guy"):
             guy_backend = arg
+        else:
+            print "Unknown option: " + opt
+            print_help()
+            sys.exit(1)
 
     # Initialize the guy backend
     if (guy_backend == "sdl"):
@@ -39,6 +48,8 @@ if __name__ == '__main__':
     else:
         print "Unknown UI frontend " + guy_backend + ". Aborting!"
         sys.exit(2)
+
+    sys.exit(0)
 
     print """Welcome to 'Hello, Class' game
     Available commands are:
