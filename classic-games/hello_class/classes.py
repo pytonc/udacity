@@ -226,7 +226,6 @@ class Enemy(Character):
     def __init__(self, x, y, hp):
         Character.__init__(self, x, y, CHR_ENEMY, hp)
 
-    # not used
     def challenge(self, other):
         print "Let's fight!"
         
@@ -286,3 +285,15 @@ class Archer(Character):
         dist = self.distance(enemy)
         if (dist[0] <= 5 and dist[1] == 0) or (dist[0] == 0 and dist[1] <= 5):
             enemy.harm(5)
+    
+class Enemy_Monk(Character):
+    def __init__(self, x, y, hp, mana):
+        Character.__init__(self, x, y, CHR_ENEMY, hp)
+        self.mana = mana
+        
+    def heal(self, enemy):
+        self.hp -= 2
+        enemy.hp +=5
+        self.mana -=5
+    
+    
