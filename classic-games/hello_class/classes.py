@@ -181,6 +181,43 @@ class Character(Entity):
             self.image = CHR_DEAD
             self.hp = 0
 
+    def get_all_enemies_at_distance(self, dist):
+        """Return a list of all enemies that are exactly 'dist' cells away
+        either horizontally or vertically.
+        """
+        coords = [((self.x + dist) % world.width, self.y % world.height),
+                  ((self.x - dist) % world.width, self.y % world.height),
+                  (self.x % world.width, (self.y + dist) % world.height),
+                  (self.x % world.width, (self.y - dist) % world.height)]
+        enemies = []
+        for x, y in coords:
+            if world.is_occupied(x, y) and isinstance(world.map[x][y], Enemy):
+                enemies.append(world.map[x][y])
+        return enemies
+
+    def get_all_enemies(self, max_dist=1):
+        """Return a list of all enemies that are at most 'max_dist' cells away
+        either horizontally or vertically.
+        """
+        enemies = []
+        for dist in range(1, max_dist+1):
+            enemies.extend(self.get_all_enemies_at_distance(dist))
+        return enemies
+
+    def get_alive_enemies_at_distance(self, dist):
+        """Return a list of alive enemies that are exactly 'dist' cells away
+        either horizontally or vertically.
+        """
+        enemies = self.get_all_enemies_at_distance(dist)
+        return [enemy for enemy in enemies if enemy.hp > 0]
+
+    def get_alive_enemies(self, max_dist=1):
+        """Return a list of alive enemies that are at most 'max_dist' cells away
+        either horizontally or vertically.
+        """
+        enemies = self.get_all_enemies(max_dist)
+        return [enemy for enemy in enemies if enemy.hp > 0]
+
 class Player(Character):
     def __init__(self, x, y, hp):
         Character.__init__(self, x, y, CHR_PLAYER, hp)
@@ -220,15 +257,24 @@ class Enemy(Character):
 class Wizard(Character):
     def __init__(self, x, y, hp):
         Character.__init__(self, x, y, CHR_WIZARD, hp)
-    
-    def cast_spell(self, enemy):
+
+    def cast_spell(self, name, target):
+        """Cast a spell on the given target."""
+        if name == 'remove':
+            self._cast_remove(target)
+        elif name == 'hp-stealer':
+            self._cast_hp_stealer(target)
+        else:
+            print "The wizard does not know the spell '{0}' yet.".format(name)
+
+    def _cast_remove(self, enemy):
         dist = self.distance(enemy)
         if dist == (0, 1) or dist == (1, 0):
             enemy.remove()
-            
-    def cast_hp_stealer(self, enemy):
+
+    def _cast_hp_stealer(self, enemy):
         dist = self.distance(enemy)
-        if dist == (0,3) or dist == (0,3):
+        if dist == (0, 3) or dist == (3, 0):
             enemy.harm(3)
             self.hp += 3
 

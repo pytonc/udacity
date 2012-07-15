@@ -31,6 +31,7 @@ if __name__ == '__main__':
     student = Player(10, 10, 100)
     engineer = Wizard(35, 14, 100)
     bug1 = Enemy(12, 10, 100)
+    bug2 = Enemy(11, 11, 100)
     
     statusbar.set_character(student)
     world.print_map()
@@ -47,8 +48,10 @@ if __name__ == '__main__':
             statusbar.set_status("Your GPS location: %i %i" % (student.x, student.y))
             statusbar.set_status("Bug GPS location: %i %i" % (bug1.x, bug1.y))
         elif c == "a":
-            student.attack(bug1)
-            bug1.act(student, DIRECTIONS)
+            enemies = student.get_alive_enemies(1)
+            if enemies:
+                student.attack(enemies[0])
+                enemies[0].act(student, DIRECTIONS)
         else:
             statusbar.set_status("Unknown command. 'x' to exit game")
             
