@@ -93,6 +93,43 @@ class Character(Entity):
             self.image = 'X'
             self.hp = 0
 
+    def get_all_enemies_at_distance(self, dist):
+        """Return a list of all enemies that are exactly 'dist' cells away
+        either horizontally or vertically.
+        """
+        coords = [((self.x + dist) % world.width, self.y % world.height),
+                  ((self.x - dist) % world.width, self.y % world.height),
+                  (self.x % world.width, (self.y + dist) % world.height),
+                  (self.x % world.width, (self.y - dist) % world.height)]
+        enemies = []
+        for x, y in coords:
+            if world.is_occupied(x, y):
+                enemies.append(world.map[x][y])
+        return enemies
+
+    def get_all_enemies(self, max_dist=1):
+        """Return a list of all enemies that are at most 'max_dist' cells away
+        either horizontally or vertically.
+        """
+        enemies = []
+        for dist in range(1, max_dist+1):
+            enemies.extend(self.get_all_enemies_at_distance(dist))
+        return enemies
+
+    def get_alive_enemies_at_distance(self, dist):
+        """Return a list of alive enemies that are exactly 'dist' cells away
+        either horizontally or vertically.
+        """
+        enemies = self.get_all_enemies_at_distance(dist)
+        return [enemy for enemy in enemies if enemy.hp > 0]
+
+    def get_alive_enemies(self, max_dist=1):
+        """Return a list of alive enemies that are at most 'max_dist' cells away
+        either horizontally or vertically.
+        """
+        enemies = self.get_all_enemies(max_dist)
+        return [enemy for enemy in enemies if enemy.hp > 0]
+
 class Enemy(Character):
     def __init__(self, x, y, hp):
         Character.__init__(self, x, y, 'B', hp)

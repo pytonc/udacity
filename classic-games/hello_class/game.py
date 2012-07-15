@@ -10,6 +10,7 @@ if __name__ == '__main__':
     student = Character(10, 10, 'S', 100)
     engineer = Wizard(20, 10, 100)
     bug1 = Enemy(12, 10, 100)
+    bug2 = Enemy(11, 11, 100)
     print """Welcome to 'Hello, Class' game
     Available commands are:
     r - move right
@@ -50,8 +51,10 @@ if __name__ == '__main__':
             print "Your GPS location: ", student.x, student.y
             print "Bug GPS location: ", bug1.x, bug1.y
         elif c == "a":
-            student.attack(bug1)
-            print "Bug now has: ", bug1.hp, " hp left"
+            enemies = student.get_alive_enemies(1)
+            if enemies:
+                student.attack(enemies[0])
+                print "Enemy now has: ", enemies[0].hp, " hp left"
             world.print_map()
         else:
             print "Unknown command. 'x' to exit the game"
