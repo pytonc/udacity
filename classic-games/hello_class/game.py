@@ -2,7 +2,11 @@
 # game.py - simple game to demonstrate classes and objects
 from classes import *
 from ui_pygame import *
+from ui_txt import *
 import getopt, sys
+import ConfigParser
+
+import time
 
 def print_help():
     print sys.argv[0] + ' -h|--help -g|--gui=sdl'
@@ -10,92 +14,80 @@ def print_help():
     print 'sdl\t will use the pygame/SDL frontend'
     print 'txt\t will use the embedded ASCII frontend'
 
-DIRECTIONS = {
-    "r": "right",
-    "l": "left",
-    "d": "down",
-    "u": "up"
-}
-
 if __name__ == '__main__':
     # Initialize some defaults, before the cmdline parsing
-    guy_backend = "sdl"
+    # XXX guy_backend = "sdl"
+    guy_backend = "txt"
+    config_file = "game.ini"
+    config = ConfigParser.ConfigParser()
 
     # Read command line parameter
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hg:",["help", "gui="])
+        opts, args = getopt.getopt(sys.argv[1:],
+                "hg:c:",
+                ["help", "gui=", "config="])
     except getopt.GetoptError:
         print_help()
         sys.exit(1)
-
-    print len(opts), len(args)
 
     for opt, arg in opts:
         if opt in ('-h', '--help'):
             print_help()
             sys.exit()
-        elif opt in ("-g", "--guy"):
+        elif opt in ("-g", "--gui"):
             guy_backend = arg
+        elif opt in ("-c", "--config"):
+            config_file = arg
         else:
             print "Unknown option: " + opt
             print_help()
             sys.exit(1)
 
-    # Initialize the guy backend
-    if (guy_backend == "sdl"):
+    # Read the config file
+    try:
+        config.read(config_file)
+    except:
+       print "Error reading config file " + config_file
+       sys.exit(3)
+
+    map_width = config.getint("WordMap", "width")
+    map_height = config.getint("WordMap", "height")
+
+    # Initialize game Frontend
+    if guy_backend == "sdl":
         print "Initializing PyGame / SDL frontend"
-        ui = SDLUserInterface(640, 480)
+        if map_width > 0 and map_height > 0:
+            ui = SDLUserInterface(maps_width, map_height)
+        else:
+            ui = SDLUserInterface()
+    elif guy_backend == "txt":
+        print "Initializing ASCII frontend"
+        if map_width > 0 and map_height > 0:
+            ui = TXTUserInterface(map_width, map_height)
+        else:
+            ui = TXTUserInterface()
     else:
         print "Unknown UI frontend " + guy_backend + ". Aborting!"
         sys.exit(2)
 
+    # Set up the current level
+    level = "Level1"
+
+    student_data = config.get(level, 'student').split(',')
+    ui.add_student(student_data)
+
+    engineer_data = config.get(level, 'engineer').split(',')
+    ui.add_engineer(engineer_data)
+
+    bugs_data = config.get(level, 'bug').split(';')
+    for el in bugs_data:
+        ui.add_enemy(el.split(','))
+
+    ui.set_statusbar_character(ui.get_student())
+
+    ui.draw_map()
+    ui.mainloop()
+
     sys.exit(0)
-
-    print """Welcome to 'Hello, Class' game
-    Available commands are:
-    r - move right
-    l - move left
-    u - move up
-    d - move down
-    a - attack
-    gps - print location
-    x - exit
-    
-    There is a Bug 2 steps to the right from you.
-    You should probably do something about it!
-    """
-
-    # initializing some entities
-
-    #campus = World(100, 100)
-    student = Player(10, 10, 100)
-    engineer = Wizard(35, 14, 100)
-    bug1 = Enemy(12, 10, 100)
-    bug2 = Enemy(11, 11, 100)
-    
-    statusbar.set_character(student)
-    world.print_map()
-
-    while True:
-        c = raw_input("You > ")
-        
-        if c == "x":
-            break
-        elif c in DIRECTIONS:
-            student.move(DIRECTIONS[c])
-            bug1.act(student, DIRECTIONS)
-        elif c == "gps":
-            statusbar.set_status("Your GPS location: %i %i" % (student.x, student.y))
-            statusbar.set_status("Bug GPS location: %i %i" % (bug1.x, bug1.y))
-        elif c == "a":
-            enemies = student.get_alive_enemies(1)
-            if enemies:
-                student.attack(enemies[0])
-                enemies[0].act(student, DIRECTIONS)
-        else:
-            statusbar.set_status("Unknown command. 'x' to exit game")
-            
-        statusbar.show()
-        world.print_map()
 
 # vim: expandtab tabstop=4 shiftwidth=4 softtabstop=4
