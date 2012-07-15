@@ -161,6 +161,9 @@ class Character(classes.Character):
         self.image = TXTUserInterface.CHR_DEAD
         self.hp = 0
 
+    def get_label(self):
+        return self.image
+
 class Player(Character, classes.Player):
     def __init__(self, ui, attributes):
         Character.__init__(self, ui, attributes)
