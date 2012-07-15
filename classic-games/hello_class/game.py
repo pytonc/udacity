@@ -32,7 +32,6 @@ if __name__ == '__main__':
     engineer = Wizard(35, 14, 100)
     bug1 = Enemy(12, 10, 100)
     
-    global statusbar
     statusbar.set_character(student)
     world.print_map()
 
@@ -43,8 +42,7 @@ if __name__ == '__main__':
             break
         elif c in DIRECTIONS:
             student.move(DIRECTIONS[c])
-            if random.choice((True, False)):
-                bug1.act(student, DIRECTIONS)
+            bug1.act(student, DIRECTIONS)
         elif c == "gps":
             statusbar.set_status("Your GPS location: %i %i" % (student.x, student.y))
             statusbar.set_status("Bug GPS location: %i %i" % (bug1.x, bug1.y))
