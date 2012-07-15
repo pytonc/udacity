@@ -1,5 +1,48 @@
 #!/usr/bin/env python
 # game.py - simple game to demonstrate classes and objects
+import random
+
+CHR_PLAYER = "S"
+CHR_ENEMY = "B"
+CHR_WIZARD = "W"
+CHR_ARCHER = "A"
+CHR_DEAD = "X"
+
+class StatusBar(object):
+    def __init__(self, character = None):
+        self.character = character
+        self.msg = ''
+    
+    def set_character(self, character):
+        self.character = character
+        self.set_status()
+        self.show()
+        
+    def set_status(self, msg = ''):
+        self.msg = (msg, '::'.join((self.msg, msg)))[len(self.msg) > 0]
+        status = "HP: %i/%i" % (self.character.hp, self.character.max_hp)
+        msgs = self.msg.split('::')
+        
+        self.line1 = "%s + %s" % (status, msgs[0])
+        if len(msgs) > 1:
+            self.line2 = "%s + %s" % (' ' * len(status), msgs[1])
+        else:
+            self.line2 = "%s + %s" % (' ' * len(status), ' ' * len(msgs[0]))
+
+    def format_line(self, txt, width):
+        line = "+ %s" % txt
+        line += " " * (width - (len(line))) + " +"
+        return line
+
+    def show(self):
+        self.set_status()
+        print "+" * (world.width + 2)
+        print self.format_line(self.line1, world.width)
+        print self.format_line(self.line2, world.width)
+        self.msg = ''
+
+statusbar = StatusBar()
+
 class WorldMap(object):
     def __init__(self, width, height):
         self.width = width
@@ -23,7 +66,7 @@ class WorldMap(object):
             print line + '+'
         print '+' * (self.width + 2)
 
-world = WorldMap(50, 22)
+world = WorldMap(60, 22)
 
 #world = [[None for x in range(100)] for y in range(100)]
 
@@ -44,9 +87,10 @@ class Entity:
         return abs(other.x - self.x), abs(other.y - self.y)
 
 class Character(Entity):
-    def __init__(self, x, y, image, hp):
+    def __init__(self, x, y, image, hp, damage = 10):
         Entity.__init__(self, x, y, image)
-        self.hp = hp
+        self.hp, self.max_hp = hp, hp
+        self.damage = damage
         self.items = []
 
     def _direction_to_dxdy(self, direction):
@@ -62,21 +106,26 @@ class Character(Entity):
             dy = 1
         elif direction == 'down':
             dy = -1
-        else:
-            print "Please enter a valid direction: 'left', 'right', 'up', or 'down'"
         return dx, dy
 
-    def move(self, direction):
+    def new_pos(self, direction):
         '''
-            Moves a character one space in a given direction. Takes as input a 
+            Calculates a new position given a direction. Takes as input a 
             direction 'left', 'right', 'up' or 'down'. Allows wrapping of the 
             world map (eg. moving left from x = 0 moves you to x = -1)
         '''
         dx, dy = self._direction_to_dxdy(direction)
         new_x = (self.x + dx) % world.width
         new_y = (self.y + dy) % world.height
+        return new_x, new_y
+
+    def move(self, direction):
+        """
+            Moves the character to the new position.
+        """
+        new_x, new_y = self.new_pos(direction)
         if world.is_occupied(new_x, new_y):
-            print 'Position is occupied, try another move.'
+            statusbar.set_status('Position is occupied, try another move.')
         else:
             self.remove()
             self.x, self.y = new_x, new_y
@@ -85,30 +134,98 @@ class Character(Entity):
     def attack(self, enemy):
         dist = self.distance(enemy)
         if dist == (0, 1) or dist == (1, 0):
-            enemy.harm(10)
+            if not enemy.hp:
+                msgs = [
+                    "This body doesn't look delicious at all.",
+                    "You really want me to do this?",
+                    "Yeah, whatever!",
+                    "I killed it! What did you make me do!"
+                    ]
+                statusbar.set_status(random.choice(msgs))
+            else:
+                # Possible damage is depending on physical condition
+                worst = int((self.condition() * 0.01) ** (1/2.) * self.damage + 0.5)
+                best = int((self.condition() * 0.01) ** (1/4.) * self.damage + 0.5)
+                damage = (worst == best) and best or random.randrange(worst, best)
+                
+                # Possible damage is also depending on sudden adrenaline
+                # rushes and aiming accuracy or at least butterfly flaps
+                damage = random.randrange(
+                    (damage-1, 0)[not damage],
+                    (damage+1, self.damage)[damage == self.damage])
+                enemy.harm(damage)
+                
+                if enemy.image == CHR_PLAYER:
+                    statusbar.set_status("You are being attacked: %i damage." % damage)
+                elif self.image == CHR_PLAYER:
+                    if enemy.image == CHR_DEAD:
+                        statusbar.set_status("You make %i damage: your enemy is dead." % damage)
+                    else:
+                        statusbar.set_status("You make %i damage: %s has %i/%i hp left." % \
+                            (damage, enemy.image, enemy.hp, enemy.max_hp))
+        else:
+            msgs = [
+                "Woah! Kicking air really is fun!",
+                "This would be totally ineffective!",
+                "Just scaring the hiding velociraptors..."
+                ]
+            statusbar.set_status(random.choice(msgs))
+            
+
+    def condition(self):
+        return (self.hp * 100) / self.max_hp
 
     def harm(self, damage):
         self.hp -= damage
         if self.hp <= 0:
-            self.image = 'X'
+            self.image = CHR_DEAD
             self.hp = 0
 
+class Player(Character):
+    def __init__(self, x, y, hp):
+        Character.__init__(self, x, y, CHR_PLAYER, hp)
+    
 class Enemy(Character):
     def __init__(self, x, y, hp):
-        Character.__init__(self, x, y, 'B', hp)
+        Character.__init__(self, x, y, CHR_ENEMY, hp)
 
+    # not used
     def challenge(self, other):
         print "Let's fight!"
+        
+    def act(self, character, directions):
+        # No action if dead X-(
+        if not self.hp:
+            return False
+            
+        choices = [0, 1]
+        
+        dist = self.distance(character)
+        if dist == (0, 1) or dist == (1, 0):
+            choices.append(2)
+        choice = random.choice(choices)
+        
+        if choice == 1:
+            # Running away
+            while (True):
+                goto = directions[random.choice(directions.keys())]
+                new_x, new_y = self.new_pos(goto)
+                if not world.is_occupied(new_x, new_y):
+                    self.move(goto)
+                    break
+        elif choice == 2:
+            # Fighting back
+            self.attack(character)
 
 class Wizard(Character):
     def __init__(self, x, y, hp):
-        Character.__init__(self, x, y, 'W', hp)
+        Character.__init__(self, x, y, CHR_WIZARD, hp)
     
     def cast_spell(self, enemy):
         dist = self.distance(enemy)
         if dist == (0, 1) or dist == (1, 0):
             enemy.remove()
-    
+            
     def cast_hp_stealer(self, enemy):
         dist = self.distance(enemy)
         if dist == (0,3) or dist == (0,3):
@@ -117,7 +234,7 @@ class Wizard(Character):
 
 class Archer(Character):
     def __init__(self, x, y, hp):
-        Character.__init__(self, x, y, 'A', hp)
+        Character.__init__(self, x, y, CHR_ARCHER, hp)
     
     def range_attack(self, enemy):
         dist = self.distance(enemy)
