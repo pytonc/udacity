@@ -103,15 +103,24 @@ class Enemy(Character):
 class Wizard(Character):
     def __init__(self, x, y, hp):
         Character.__init__(self, x, y, 'W', hp)
-    
-    def cast_spell(self, enemy):
+
+    def cast_spell(self, name, target):
+        """Cast a spell on the given target."""
+        if name == 'remove':
+            self._cast_remove(target)
+        elif name == 'hp-stealer':
+            self._cast_hp_stealer(target)
+        else:
+            print "The wizard does not know the spell '{0}' yet.".format(name)
+
+    def _cast_remove(self, enemy):
         dist = self.distance(enemy)
         if dist == (0, 1) or dist == (1, 0):
             enemy.remove()
-    
-    def cast_hp_stealer(self, enemy):
+
+    def _cast_hp_stealer(self, enemy):
         dist = self.distance(enemy)
-        if dist == (0,3) or dist == (0,3):
+        if dist == (0, 3) or dist == (3, 0):
             enemy.harm(3)
             self.hp += 3
 
