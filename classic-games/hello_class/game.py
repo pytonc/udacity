@@ -1,7 +1,12 @@
 #!/usr/bin/env python
 # game.py - simple game to demonstrate classes and objects
 from classes import *
-        
+from ui_pygame import *
+import getopt, sys
+
+def print_help():
+    print sys.argv[0] + ' -h|--help -g|--gui=sdl'
+
 DIRECTIONS = {
     "r": "right",
     "l": "left",
@@ -10,6 +15,30 @@ DIRECTIONS = {
 }
 
 if __name__ == '__main__':
+    # Initialize some defaults, before the cmdline parsing
+    guy_backend = "sdl"
+
+    # Read command line parameter
+    try:
+        opts, args = getopt.getopt(sys.argv, "hg:",["help", "guy="])
+    except getopt.GetoptError:
+        print_help()
+        sys.exit(1)
+
+    for opt, arg in opts:
+        if opt in ('-h', '--help'):
+            print_help()
+            sys.exit()
+        elif opt in ("-g", "--guy"):
+            guy_backend = arg
+
+    # Initialize the guy backend
+    if (guy_backend == "sdl"):
+        print "Initializing PyGame / SDL frontend"
+        ui = SDLUserInterface(640, 480)
+    else:
+        print "Unknown UI frontend " + guy_backend + ". Aborting!"
+        sys.exit(2)
 
     print """Welcome to 'Hello, Class' game
     Available commands are:
@@ -55,4 +84,4 @@ if __name__ == '__main__':
         statusbar.show()
         world.print_map()
 
-
+# vim: expandtab tabstop=4 shiftwidth=4 softtabstop=4
