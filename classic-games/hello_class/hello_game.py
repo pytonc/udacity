@@ -8,7 +8,7 @@ from ui_txt import *
 import pickle
 
 class HelloGame(object):
-	def __init__(self, config, frontend = "txt"):
+	def __init__(self, config, frontend = "sdl"):
 		self.config = config
 
 		map_width = config.getint("WordMap", "width")
@@ -18,7 +18,7 @@ class HelloGame(object):
 		if frontend == "sdl":
 			print "Initializing PyGame / SDL frontend"
 			if map_width > 0 and map_height > 0:
-				self.ui = SDLUserInterface(self, maps_width, map_height)
+				self.ui = SDLUserInterface(self, map_width, map_height)
 			else:
 				self.ui = SDLUserInterface(self)
 		elif frontend == "txt":

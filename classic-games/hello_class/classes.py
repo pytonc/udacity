@@ -119,7 +119,7 @@ class Character(Entity):
                         self.ui.statusbar.set_status("You make %i damage: your enemy is dead." % damage)
                     else:
                         self.ui.statusbar.set_status("You make %i damage: %s has %i/%i hp left." % \
-                            (damage, enemy.image, enemy.hp, enemy.max_hp))
+                            (damage, enemy.get_label(), enemy.hp, enemy.max_hp))
         else:
             msgs = [
                 "Woah! Kicking air really is fun!",
