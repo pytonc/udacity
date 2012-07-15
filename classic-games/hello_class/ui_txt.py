@@ -13,8 +13,8 @@ class TXTUserInterface(UserInterface):
     CHR_ARCHER = "A"
     CHR_DEAD = "X"
 
-    def __init__(self, width = 60, height = 22):
-        super(TXTUserInterface, self).__init__(width, height)
+    def __init__(self, game_handler, width = 60, height = 22):
+        super(TXTUserInterface, self).__init__(game_handler, width, height)
         self.world_map = WorldMap(width, height)
         self.statusbar = StatusBar(self.world_map)
 
@@ -75,6 +75,12 @@ class TXTUserInterface(UserInterface):
                 for bug in self.bugs:
                     self.student.attack(bug)
                     bug.act(self.student, UserInterface.DIRECTIONS)
+            elif c == "save":
+                self.game_handler.save_game();
+                self.statusbar.set_status("Game saved!")
+            elif c == "load":
+                self.game_handler.load_saved_game();
+                self.statusbar.set_status("Game reloaded!")
             else:
                 self.statusbar.set_status("Unknown command. 'x' to exit game")
                 
