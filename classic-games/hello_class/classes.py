@@ -2,46 +2,13 @@
 # game.py - simple game to demonstrate classes and objects
 import random
 
-CHR_PLAYER = "S"
-CHR_ENEMY = "B"
-CHR_WIZARD = "W"
-CHR_ARCHER = "A"
-CHR_DEAD = "X"
-
 class StatusBar(object):
     def __init__(self, character = None):
         self.character = character
         self.msg = ''
     
-    def set_character(self, character):
-        self.character = character
-        self.set_status()
-        self.show()
-        
-    def set_status(self, msg = ''):
-        self.msg = (msg, '::'.join((self.msg, msg)))[len(self.msg) > 0]
-        status = "HP: %i/%i" % (self.character.hp, self.character.max_hp)
-        msgs = self.msg.split('::')
-        
-        self.line1 = "%s + %s" % (status, msgs[0])
-        if len(msgs) > 1:
-            self.line2 = "%s + %s" % (' ' * len(status), msgs[1])
-        else:
-            self.line2 = "%s + %s" % (' ' * len(status), ' ' * len(msgs[0]))
-
-    def format_line(self, txt, width):
-        line = "+ %s" % txt
-        line += " " * (width - (len(line))) + " +"
-        return line
-
-    def show(self):
-        self.set_status()
-        print "+" * (world.width + 2)
-        print self.format_line(self.line1, world.width)
-        print self.format_line(self.line2, world.width)
-        self.msg = ''
-
-statusbar = StatusBar()
+	def set_msg(msg = ''):
+		self.msg = msg
 
 class WorldMap(object):
     def __init__(self, width, height):
@@ -53,45 +20,34 @@ class WorldMap(object):
         ''' Checks if a given space on the map and returns True if occupied. '''
         return self.map[x][y] is not None
 
-    def print_map(self):
-        print '+' * (self.width + 2)
-        for y in range(self.height - 1, 0, -1):
-            line = '+'
-            for x in range(self.width):
-                cell = self.map[x][y]
-                if cell is None:
-                    line += ' '
-                else:
-                    line += cell.image
-            print line + '+'
-        print '+' * (self.width + 2)
-
-world = WorldMap(60, 22)
-
-#world = [[None for x in range(100)] for y in range(100)]
-
-class Entity:
-    def __init__(self, x, y, image):
+class Entity(object):
+    def __init__(self, world_map, x, y):
         self.x = x
         self.y = y
-        world.map[x][y] = self
-        self.image = image
+        self.world = world_map
     
     def occupy(self, x, y):
-        world.map[x][y] = self
+        self.world.map[x][y] = self
 
     def remove(self):
-        world.map[self.x][self.y] = None
+        self.world.map[self.x][self.y] = None
 
     def distance(self, other):
         return abs(other.x - self.x), abs(other.y - self.y)
 
 class Character(Entity):
-    def __init__(self, x, y, image, hp, damage = 10):
-        Entity.__init__(self, x, y, image)
+    def __init__(self, ui, x, y, hp, damage = 10):
+        Entity.__init__(self, ui.world_map, x, y)
         self.hp, self.max_hp = hp, hp
         self.damage = damage
         self.items = []
+        self.ui = ui
+        self.world = ui.world_map
+
+    def is_dead(self):
+        if self.hp <= 0:
+            return True
+        return False
 
     def _direction_to_dxdy(self, direction):
         """Convert a string representing movement direction into a tuple
@@ -115,8 +71,8 @@ class Character(Entity):
             world map (eg. moving left from x = 0 moves you to x = -1)
         '''
         dx, dy = self._direction_to_dxdy(direction)
-        new_x = (self.x + dx) % world.width
-        new_y = (self.y + dy) % world.height
+        new_x = (self.x + dx) % self.world.width
+        new_y = (self.y + dy) % self.world.height
         return new_x, new_y
 
     def move(self, direction):
@@ -124,12 +80,13 @@ class Character(Entity):
             Moves the character to the new position.
         """
         new_x, new_y = self.new_pos(direction)
-        if world.is_occupied(new_x, new_y):
-            statusbar.set_status('Position is occupied, try another move.')
+        if self.world.is_occupied(new_x, new_y):
+            self.ui.statusbar.set_status('Position is occupied, try another move.')
         else:
             self.remove()
             self.x, self.y = new_x, new_y
             self.occupy(self.x, self.y)
+            self.ui.draw_map()
 
     def attack(self, enemy):
         dist = self.distance(enemy)
@@ -141,7 +98,7 @@ class Character(Entity):
                     "Yeah, whatever!",
                     "I killed it! What did you make me do!"
                     ]
-                statusbar.set_status(random.choice(msgs))
+                self.ui.statusbar.set_status(random.choice(msgs))
             else:
                 # Possible damage is depending on physical condition
                 worst = int((self.condition() * 0.01) ** (1/2.) * self.damage + 0.5)
@@ -155,13 +112,13 @@ class Character(Entity):
                     (damage+1, self.damage)[damage == self.damage])
                 enemy.harm(damage)
                 
-                if enemy.image == CHR_PLAYER:
-                    statusbar.set_status("You are being attacked: %i damage." % damage)
-                elif self.image == CHR_PLAYER:
-                    if enemy.image == CHR_DEAD:
-                        statusbar.set_status("You make %i damage: your enemy is dead." % damage)
+                if enemy.is_player():
+                    self.ui.statusbar.set_status("You are being attacked: %i damage." % damage)
+                elif self.is_player():
+                    if enemy.is_dead():
+                        self.ui.statusbar.set_status("You make %i damage: your enemy is dead." % damage)
                     else:
-                        statusbar.set_status("You make %i damage: %s has %i/%i hp left." % \
+                        self.ui.statusbar.set_status("You make %i damage: %s has %i/%i hp left." % \
                             (damage, enemy.image, enemy.hp, enemy.max_hp))
         else:
             msgs = [
@@ -169,7 +126,7 @@ class Character(Entity):
                 "This would be totally ineffective!",
                 "Just scaring the hiding velociraptors..."
                 ]
-            statusbar.set_status(random.choice(msgs))
+            self.ui.statusbar.set_status(random.choice(msgs))
             
 
     def condition(self):
@@ -178,16 +135,15 @@ class Character(Entity):
     def harm(self, damage):
         self.hp -= damage
         if self.hp <= 0:
-            self.image = CHR_DEAD
-            self.hp = 0
+            self.set_dead()
 
 class Player(Character):
-    def __init__(self, x, y, hp):
-        Character.__init__(self, x, y, CHR_PLAYER, hp)
+    def __init__(self, ui, x, y, hp):
+        Character.__init__(self, ui, x, y, hp)
     
 class Enemy(Character):
-    def __init__(self, x, y, hp):
-        Character.__init__(self, x, y, CHR_ENEMY, hp)
+    def __init__(self, ui, x, y, hp):
+        Character.__init__(self, ui, x, y, hp)
 
     # not used
     def challenge(self, other):
@@ -210,7 +166,7 @@ class Enemy(Character):
             while (True):
                 goto = directions[random.choice(directions.keys())]
                 new_x, new_y = self.new_pos(goto)
-                if not world.is_occupied(new_x, new_y):
+                if not self.world.is_occupied(new_x, new_y):
                     self.move(goto)
                     break
         elif choice == 2:
@@ -218,8 +174,8 @@ class Enemy(Character):
             self.attack(character)
 
 class Wizard(Character):
-    def __init__(self, x, y, hp):
-        Character.__init__(self, x, y, CHR_WIZARD, hp)
+    def __init__(self, ui, x, y, hp):
+        Character.__init__(self, ui, x, y, hp)
     
     def cast_spell(self, enemy):
         dist = self.distance(enemy)
@@ -233,10 +189,12 @@ class Wizard(Character):
             self.hp += 3
 
 class Archer(Character):
-    def __init__(self, x, y, hp):
-        Character.__init__(self, x, y, CHR_ARCHER, hp)
+    def __init__(self, ui, x, y, hp):
+        Character.__init__(self, ui, x, y, hp)
     
     def range_attack(self, enemy):
         dist = self.distance(enemy)
         if (dist[0] <= 5 and dist[1] == 0) or (dist[0] == 0 and dist[1] <= 5):
             enemy.harm(5)
+
+# vim: expandtab tabstop=4 shiftwidth=4 softtabstop=4
