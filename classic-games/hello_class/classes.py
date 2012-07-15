@@ -7,6 +7,8 @@ CHR_ENEMY = "B"
 CHR_WIZARD = "W"
 CHR_ARCHER = "A"
 CHR_DEAD = "X"
+CHR_FOUNTAIN = "F"
+CHR_ENEMY_MONK = "M"
 
 class StatusBar(object):
     def __init__(self, character = None):
@@ -85,6 +87,40 @@ class Entity:
 
     def distance(self, other):
         return abs(other.x - self.x), abs(other.y - self.y)
+        
+class Facility(Entity):    
+    def __init__(self, x, y, image): 	 	
+        Entity.__init__(self, x, y, image)        
+        for f in range(random.randint(1,10)):  	 	
+            self.occupy(random.randint(1, world.width), random.randint(1, world.height))
+
+class Fountain(Facility): 	 
+    def __init__(self, x, y, image, hp):  	
+        Facility.__init__(self, x, y, CHR_FOUNTAIN) 	 	
+        self.hp = hp
+        
+    def heal(self, character):      	
+        dist = self.distance(character) 	 	
+        if self.hp == 0: 	 	
+            print("I'm deeply sorry, but I'm empty :(") 	 	
+        else: 	 	
+            if character.hp == 0:                
+                print("I see, you are dead...so sorry! But I can make you alive again!") 	 	
+                print("But with one condition! You have to promise me you will become an ascetic.") 	 	
+                print("If you agree, as a first step, you throw away all your items.") 	 	
+                choice = raw_input("Are you agree?")                
+                if choice == "Yes": 	 	
+                    character.items = [] 	 	
+                    character.hp += 100
+                    character.image = CHR_PLAYER
+                else:	
+                    print("Greed kills.")	
+                        	
+            else:                	
+                while (dist == (0,1) or dist == (1,0):	
+                    character.hp += 10	
+                    self.hp -= 10
+
 
 class Character(Entity):
     def __init__(self, x, y, image, hp, damage = 10):
@@ -132,44 +168,47 @@ class Character(Entity):
             self.occupy(self.x, self.y)
 
     def attack(self, enemy):
-        dist = self.distance(enemy)
-        if dist == (0, 1) or dist == (1, 0):
-            if not enemy.hp:
+        if self.hp == 0:
+            print("Corpses can't attack, unless they are zombies. But you are not.")
+        else:
+            dist = self.distance(enemy)
+            if dist == (0, 1) or dist == (1, 0):
+                if not enemy.hp:
+                    msgs = [
+                        "This body doesn't look delicious at all.",
+                        "You really want me to do this?",
+                        "Yeah, whatever!",
+                        "I killed it! What did you make me do!"
+                         ]
+                    statusbar.set_status(random.choice(msgs))
+                else:
+                    # Possible damage is depending on physical condition
+                    worst = int((self.condition() * 0.01) ** (1/2.) * self.damage + 0.5)
+                    best = int((self.condition() * 0.01) ** (1/4.) * self.damage + 0.5)
+                    damage = (worst == best) and best or random.randrange(worst, best)
+                
+                    # Possible damage is also depending on sudden adrenaline
+                    # rushes and aiming accuracy or at least butterfly flaps
+                    damage = random.randrange(
+                        (damage-1, 0)[not damage],
+                        (damage+1, self.damage)[damage == self.damage])
+                    enemy.harm(damage)
+                
+                    if enemy.image == CHR_PLAYER:
+                        statusbar.set_status("You are being attacked: %i damage." % damage)
+                    elif self.image == CHR_PLAYER:
+                        if enemy.image == CHR_DEAD:
+                            statusbar.set_status("You make %i damage: your enemy is dead." % damage)
+                        else:
+                            statusbar.set_status("You make %i damage: %s has %i/%i hp left." % \
+                                (damage, enemy.image, enemy.hp, enemy.max_hp))
+            else:
                 msgs = [
-                    "This body doesn't look delicious at all.",
-                    "You really want me to do this?",
-                    "Yeah, whatever!",
-                    "I killed it! What did you make me do!"
+                    "Woah! Kicking air really is fun!",
+                    "This would be totally ineffective!",
+                    "Just scaring the hiding velociraptors..."
                     ]
                 statusbar.set_status(random.choice(msgs))
-            else:
-                # Possible damage is depending on physical condition
-                worst = int((self.condition() * 0.01) ** (1/2.) * self.damage + 0.5)
-                best = int((self.condition() * 0.01) ** (1/4.) * self.damage + 0.5)
-                damage = (worst == best) and best or random.randrange(worst, best)
-                
-                # Possible damage is also depending on sudden adrenaline
-                # rushes and aiming accuracy or at least butterfly flaps
-                damage = random.randrange(
-                    (damage-1, 0)[not damage],
-                    (damage+1, self.damage)[damage == self.damage])
-                enemy.harm(damage)
-                
-                if enemy.image == CHR_PLAYER:
-                    statusbar.set_status("You are being attacked: %i damage." % damage)
-                elif self.image == CHR_PLAYER:
-                    if enemy.image == CHR_DEAD:
-                        statusbar.set_status("You make %i damage: your enemy is dead." % damage)
-                    else:
-                        statusbar.set_status("You make %i damage: %s has %i/%i hp left." % \
-                            (damage, enemy.image, enemy.hp, enemy.max_hp))
-        else:
-            msgs = [
-                "Woah! Kicking air really is fun!",
-                "This would be totally ineffective!",
-                "Just scaring the hiding velociraptors..."
-                ]
-            statusbar.set_status(random.choice(msgs))
             
 
     def condition(self):
@@ -252,9 +291,18 @@ class Enemy(Character):
         elif choice == 2:
             # Fighting back
             self.attack(character)
+            
+class Enemy_Monk(Character):	
+    def __init__(self, x, y, hp, mana):	
+        Character.__init__(self, x, y, CHR_ENEMY_MONK, hp)	
+        	
+    def heal(self,  enemy):	
+        self.hp -= 2	
+        enemy.hp +=5	
+        self.mana -=5
 
 class Wizard(Character):
-    def __init__(self, x, y, hp):
+    def __init__(self, x, y, hp, mana):
         Character.__init__(self, x, y, CHR_WIZARD, hp)
 
     def cast_spell(self, name, target):
@@ -270,12 +318,14 @@ class Wizard(Character):
         dist = self.distance(enemy)
         if dist == (0, 1) or dist == (1, 0):
             enemy.remove()
+            self.mana -= 20
 
     def _cast_hp_stealer(self, enemy):
         dist = self.distance(enemy)
         if dist == (0, 3) or dist == (3, 0):
             enemy.harm(3)
             self.hp += 3
+            self.mana -= 5
 
 class Archer(Character):
     def __init__(self, x, y, hp):
