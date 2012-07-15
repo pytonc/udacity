@@ -10,7 +10,8 @@ class UserInterface(object):
         "u": "up"
     }
 
-    def __init__(self, width, height):
+    def __init__(self, game_handler, width, height):
+        self.game_handler = game_handler
         self.student = None
         self.engineer = None
         self.bugs = []
