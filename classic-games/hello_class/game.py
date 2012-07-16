@@ -29,7 +29,7 @@ if __name__ == '__main__':
 
     #campus = World(100, 100)
     student = Player(10, 10, 100)
-    engineer = Wizard(35, 14, 100)
+    #engineer = Wizard(35, 14, 100)
     bug1 = Enemy(12, 10, 100)
     bug2 = Enemy(11, 11, 100)
     
