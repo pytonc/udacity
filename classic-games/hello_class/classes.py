@@ -95,8 +95,8 @@ class Character(Entity):
 
     def _direction_to_dxdy(self, direction):
         """Convert a string representing movement direction into a tuple
-        (dx, dy), where 'dx' is the size of step in the 'x' direction and
-        'dy' is the size of step in the 'y' direction."""
+(dx, dy), where 'dx' is the size of step in the 'x' direction and
+'dy' is the size of step in the 'y' direction."""
         dx, dy = 0, 0
         if direction == 'left':
             dx = -1
@@ -110,10 +110,10 @@ class Character(Entity):
 
     def new_pos(self, direction):
         '''
-            Calculates a new position given a direction. Takes as input a 
-            direction 'left', 'right', 'up' or 'down'. Allows wrapping of the 
-            world map (eg. moving left from x = 0 moves you to x = -1)
-        '''
+Calculates a new position given a direction. Takes as input a
+direction 'left', 'right', 'up' or 'down'. Allows wrapping of the
+world map (eg. moving left from x = 0 moves you to x = -1)
+'''
         dx, dy = self._direction_to_dxdy(direction)
         new_x = (self.x + dx) % world.width
         new_y = (self.y + dy) % world.height
@@ -121,8 +121,8 @@ class Character(Entity):
 
     def move(self, direction):
         """
-            Moves the character to the new position.
-        """
+Moves the character to the new position.
+"""
         new_x, new_y = self.new_pos(direction)
         if world.is_occupied(new_x, new_y):
             statusbar.set_status('Position is occupied, try another move.')
@@ -183,8 +183,8 @@ class Character(Entity):
 
     def get_all_enemies_at_distance(self, dist):
         """Return a list of all enemies that are exactly 'dist' cells away
-        either horizontally or vertically.
-        """
+either horizontally or vertically.
+"""
         coords = [((self.x + dist) % world.width, self.y % world.height),
                   ((self.x - dist) % world.width, self.y % world.height),
                   (self.x % world.width, (self.y + dist) % world.height),
@@ -197,8 +197,8 @@ class Character(Entity):
 
     def get_all_enemies(self, max_dist=1):
         """Return a list of all enemies that are at most 'max_dist' cells away
-        either horizontally or vertically.
-        """
+either horizontally or vertically.
+"""
         enemies = []
         for dist in range(1, max_dist+1):
             enemies.extend(self.get_all_enemies_at_distance(dist))
@@ -206,15 +206,15 @@ class Character(Entity):
 
     def get_alive_enemies_at_distance(self, dist):
         """Return a list of alive enemies that are exactly 'dist' cells away
-        either horizontally or vertically.
-        """
+either horizontally or vertically.
+"""
         enemies = self.get_all_enemies_at_distance(dist)
         return [enemy for enemy in enemies if enemy.hp > 0]
 
     def get_alive_enemies(self, max_dist=1):
         """Return a list of alive enemies that are at most 'max_dist' cells away
-        either horizontally or vertically.
-        """
+either horizontally or vertically.
+"""
         enemies = self.get_all_enemies(max_dist)
         return [enemy for enemy in enemies if enemy.hp > 0]
 
