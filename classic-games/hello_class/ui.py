@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import classes
 
+
 # This class defines an interface for any UI frontend
 class UserInterface(object):
     DIRECTIONS = {

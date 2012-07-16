@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 
-import os, sys
+import os
+import sys
 import classes
 from ui import UserInterface
 
-# This class defines the ASCII UI frontend
 
+# This class defines the ASCII UI frontend
 class TXTUserInterface(UserInterface):
     CHR_PLAYER = "S"
     CHR_ENEMY = "B"
@@ -13,7 +14,7 @@ class TXTUserInterface(UserInterface):
     CHR_ARCHER = "A"
     CHR_DEAD = "X"
 
-    def __init__(self, game_handler, width = 60, height = 22):
+    def __init__(self, game_handler, width=60, height=22):
         super(TXTUserInterface, self).__init__(game_handler, width, height)
         self.world_map = WorldMap(width, height)
         self.statusbar = StatusBar(self.world_map)
@@ -31,13 +32,13 @@ class TXTUserInterface(UserInterface):
         There is a Bug 2 steps to the right from you.
         You should probably do something about it!
         """
-    
+
     def set_statusbar_character(self, character):
         self.statusbar.set_character(character)
 
     def set_status(self, msg):
         self.statusbar.set_status(msg)
-        
+
     def draw_window(self):
         self.world_map.print_map()
         self.statusbar.show()
@@ -63,7 +64,7 @@ class TXTUserInterface(UserInterface):
     def mainloop(self):
         while True:
             c = raw_input("You > ")
-            
+
             if c == "x":
                 break
             elif c in UserInterface.DIRECTIONS:
@@ -71,7 +72,8 @@ class TXTUserInterface(UserInterface):
                 for bug in self.bugs:
                     bug.act(self.student, UserInterface.DIRECTIONS)
             elif c == "gps":
-                self.set_status("Your GPS location: %i %i" % (self.student.x, self.student.y))
+                self.set_status("Your GPS location: %i %i" %
+                        (self.student.x, self.student.y))
                 for bug in self.bugs:
                     self.set_status("Bug GPS location: %i %i" % (bug.x, bug.y))
             elif c == "a":
@@ -79,20 +81,20 @@ class TXTUserInterface(UserInterface):
                     self.student.attack(bug)
                     bug.act(self.student, UserInterface.DIRECTIONS)
             elif c == "save":
-                self.game_handler.save_game();
+                self.game_handler.save_game()
                 self.set_status("Game saved!")
             elif c == "load":
-                self.game_handler.load_saved_game();
+                self.game_handler.load_saved_game()
                 self.set_status("Game reloaded!")
             else:
                 self.set_status("Unknown command. 'x' to exit game")
-                
+
             self.draw_window()
 
 
 # Canvas / Layout classes
 class StatusBar(classes.StatusBar):
-    def __init__(self, world_map, character = None):
+    def __init__(self, world_map, character=None):
         super(StatusBar, self).__init__(character)
         self.world_map = world_map
 
@@ -112,17 +114,18 @@ class StatusBar(classes.StatusBar):
         self.character = character
         self.set_status()
         self.show()
-        
-    def set_status(self, msg = ''):
+
+    def set_status(self, msg=''):
         self.msg = (msg, '::'.join((self.msg, msg)))[len(self.msg) > 0]
         status = "HP: %i/%i" % (self.character.hp, self.character.max_hp)
         msgs = self.msg.split('::')
-        
+
         self.line1 = "%s + %s" % (status, msgs[0])
         if len(msgs) > 1:
             self.line2 = "%s + %s" % (' ' * len(status), msgs[1])
         else:
             self.line2 = "%s + %s" % (' ' * len(status), ' ' * len(msgs[0]))
+
 
 class WorldMap(classes.WorldMap):
     def __init__(self, width, height):
@@ -147,6 +150,7 @@ class WorldMap(classes.WorldMap):
     def remove_character(self, character):
         self.map[character.x][character.y] = None
 
+
 # Base Character class
 class Character(classes.Character):
     def __init__(self, ui, attributes):
@@ -167,20 +171,24 @@ class Character(classes.Character):
     def get_label(self):
         return self.image
 
+
 class Player(Character, classes.Player):
     def __init__(self, ui, attributes):
         Character.__init__(self, ui, attributes)
         self.image = TXTUserInterface.CHR_PLAYER
+
 
 class Enemy(Character, classes.Enemy):
     def __init__(self, ui, attributes):
         Character.__init__(self, ui, attributes)
         self.image = TXTUserInterface.CHR_ENEMY
 
+
 class Wizard(Character, classes.Wizard):
     def __init__(self, ui, attributes):
         Character.__init__(self, ui, attributes)
         self.image = TXTUserInterface.CHR_WIZARD
+
 
 class Archer(Character, classes.Archer):
     def __init__(self, ui, attributes):
