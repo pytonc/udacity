@@ -18,6 +18,9 @@ if __name__ == '__main__':
     u - move up
     d - move down
     a - attack
+    i - show list of items
+    p ([n]) - pick something up or pick an item [n] from an inventory
+    draw [n] - draw weapon with position [n] in inventory
     gps - print location
     x - exit
     
@@ -31,6 +34,7 @@ if __name__ == '__main__':
     student = Player(10, 10, 100)
     engineer = Wizard(35, 14, 100)
     bug1 = Enemy(12, 10, 100)
+    chest = Chest(5, 5, [Weapon('Knife', 2)])
     
     statusbar.set_character(student)
     world.print_map()
@@ -40,15 +44,30 @@ if __name__ == '__main__':
         
         if c == "x":
             break
+            # u, d, l, r
         elif c in DIRECTIONS:
             student.move(DIRECTIONS[c])
+            bug1.act(student, DIRECTIONS)
+        elif c == "a":
+            student.attack(bug1)
             bug1.act(student, DIRECTIONS)
         elif c == "gps":
             statusbar.set_status("Your GPS location: %i %i" % (student.x, student.y))
             statusbar.set_status("Bug GPS location: %i %i" % (bug1.x, bug1.y))
-        elif c == "a":
-            student.attack(bug1)
-            bug1.act(student, DIRECTIONS)
+        elif c == "i":
+            student.show_items()
+        elif c == "o":
+            student.open()
+        elif c.startswith("p"):
+            l = c.split()
+            if len(l) == 2 and l[-1].isdigit():
+                student.pick(int(l[-1]))
+            else:
+                student.pick()
+        elif c.startswith("draw"):
+            l = c.split()
+            if len(l) == 2 and l[-1].isdigit():
+                student.draw_weapon(int(l[-1]))
         else:
             statusbar.set_status("Unknown command. 'x' to exit game")
             
