@@ -39,6 +39,7 @@ class HelloGame(object):
 	def start_game(self, level):
 		student_data = self.config.get(level, 'student').split(',')
 		self.ui.add_student(student_data)
+		self.level = level
 
 		engineer_data = self.config.get(level, 'engineer').split(',')
 		self.ui.add_engineer(engineer_data)
@@ -49,7 +50,7 @@ class HelloGame(object):
 
 		self.ui.set_statusbar_character(self.ui.get_student())
 
-		self.ui.draw_map()
+		self.ui.draw_window()
 		self.ui.mainloop()
 
 	def save_game(self):
@@ -59,8 +60,3 @@ class HelloGame(object):
 
 	def load_saved_game(self):
 		pass
-		# XXX
-		#infile = open(self.savefile, "r")
-		#tmpui = pickle.load(infile)
-		#tmpui.draw_map()
-		#self.ui = tmpui
