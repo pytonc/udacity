@@ -3,6 +3,7 @@
 
 # Hacked by MikeGoldberg to use Pygame
 # Mon Jul 16 12:51:31 CDT 2012
+# Just making a change to exeriment with git.
 
 from classes import *
 import pygame
@@ -21,7 +22,7 @@ YRES = 480
 BCOLOR = (255, 255, 255)
 BLOCK_SIZE=10 # must match value in other file! This has to be bad.
 
-# Pygame: update the graphical screen
+# jPygame: update the graphical screen
 def update_screen(players, screen):
     screen.blit(background, (0, 0))
     for player in players:
