@@ -35,7 +35,10 @@ class TXTUserInterface(UserInterface):
     def set_statusbar_character(self, character):
         self.statusbar.set_character(character)
 
-    def draw_map(self):
+    def set_status(self, msg):
+        self.statusbar.set_status(msg)
+        
+    def draw_window(self):
         self.world_map.print_map()
         self.statusbar.show()
 
@@ -68,23 +71,23 @@ class TXTUserInterface(UserInterface):
                 for bug in self.bugs:
                     bug.act(self.student, UserInterface.DIRECTIONS)
             elif c == "gps":
-                self.statusbar.set_status("Your GPS location: %i %i" % (self.student.x, self.student.y))
+                self.set_status("Your GPS location: %i %i" % (self.student.x, self.student.y))
                 for bug in self.bugs:
-                    self.statusbar.set_status("Bug GPS location: %i %i" % (bug.x, bug.y))
+                    self.set_status("Bug GPS location: %i %i" % (bug.x, bug.y))
             elif c == "a":
                 for bug in self.bugs:
                     self.student.attack(bug)
                     bug.act(self.student, UserInterface.DIRECTIONS)
             elif c == "save":
                 self.game_handler.save_game();
-                self.statusbar.set_status("Game saved!")
+                self.set_status("Game saved!")
             elif c == "load":
                 self.game_handler.load_saved_game();
-                self.statusbar.set_status("Game reloaded!")
+                self.set_status("Game reloaded!")
             else:
-                self.statusbar.set_status("Unknown command. 'x' to exit game")
+                self.set_status("Unknown command. 'x' to exit game")
                 
-            self.draw_map()
+            self.draw_window()
 
 
 # Canvas / Layout classes
@@ -127,7 +130,7 @@ class WorldMap(classes.WorldMap):
 
     def print_map(self):
         print '+' * (self.width + 2)
-        for y in range(self.height - 1, 0, -1):
+        for y in range(0, self.height - 1):
             line = '+'
             for x in range(self.width):
                 cell = self.map[x][y]
@@ -160,6 +163,9 @@ class Character(classes.Character):
     def set_dead(self):
         self.image = TXTUserInterface.CHR_DEAD
         self.hp = 0
+
+    def get_label(self):
+        return self.image
 
 class Player(Character, classes.Player):
     def __init__(self, ui, attributes):

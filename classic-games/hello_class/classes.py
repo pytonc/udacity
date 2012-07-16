@@ -43,6 +43,7 @@ class Character(Entity):
         self.items = []
         self.ui = ui
         self.world = ui.world_map
+        #print "Created character with position x = " + str(self.x) + " y = " + str(self.y)
 
     def is_dead(self):
         if self.hp <= 0:
@@ -59,9 +60,9 @@ class Character(Entity):
         elif direction == 'right':
             dx = 1
         elif direction == 'up':
-            dy = 1
-        elif direction == 'down':
             dy = -1
+        elif direction == 'down':
+            dy = 1
         return dx, dy
 
     def new_pos(self, direction):
@@ -81,12 +82,12 @@ class Character(Entity):
         """
         new_x, new_y = self.new_pos(direction)
         if self.world.is_occupied(new_x, new_y):
-            self.ui.statusbar.set_status('Position is occupied, try another move.')
+            self.ui.set_status('Position is occupied, try another move.')
         else:
             self.remove()
             self.x, self.y = new_x, new_y
             self.occupy(self.x, self.y)
-            self.ui.draw_map()
+            self.ui.draw_window()
 
     def attack(self, enemy):
         dist = self.distance(enemy)
@@ -98,7 +99,7 @@ class Character(Entity):
                     "Yeah, whatever!",
                     "I killed it! What did you make me do!"
                     ]
-                self.ui.statusbar.set_status(random.choice(msgs))
+                self.ui.set_status(random.choice(msgs))
             else:
                 # Possible damage is depending on physical condition
                 worst = int((self.condition() * 0.01) ** (1/2.) * self.damage + 0.5)
@@ -113,20 +114,20 @@ class Character(Entity):
                 enemy.harm(damage)
                 
                 if enemy.is_player():
-                    self.ui.statusbar.set_status("You are being attacked: %i damage." % damage)
+                    self.ui.set_status("You are being attacked: %i damage." % damage)
                 elif self.is_player():
                     if enemy.is_dead():
-                        self.ui.statusbar.set_status("You make %i damage: your enemy is dead." % damage)
+                        self.ui.set_status("You make %i damage: your enemy is dead." % damage)
                     else:
-                        self.ui.statusbar.set_status("You make %i damage: %s has %i/%i hp left." % \
-                            (damage, enemy.image, enemy.hp, enemy.max_hp))
+                        self.ui.set_status("You make %i damage: %s has %i/%i hp left." % \
+                            (damage, enemy.get_label(), enemy.hp, enemy.max_hp))
         else:
             msgs = [
                 "Woah! Kicking air really is fun!",
                 "This would be totally ineffective!",
                 "Just scaring the hiding velociraptors..."
                 ]
-            self.ui.statusbar.set_status(random.choice(msgs))
+            self.ui.set_status(random.choice(msgs))
             
 
     def condition(self):
@@ -212,6 +213,11 @@ class Enemy(Character):
 class Wizard(Character):
     def __init__(self, ui, x, y, hp):
         Character.__init__(self, ui, x, y, hp)
+    
+    def _cast_remove(self, enemy):
+        dist = self.distance(enemy)
+        if dist == (0, 1) or dist == (1, 0):
+            enemy.remove()
 
     def cast_spell(self, name, target):
         """Cast a spell on the given target."""
@@ -221,11 +227,6 @@ class Wizard(Character):
             self._cast_hp_stealer(target)
         else:
             print "The wizard does not know the spell '{0}' yet.".format(name)
-
-    def _cast_remove(self, enemy):
-        dist = self.distance(enemy)
-        if dist == (0, 1) or dist == (1, 0):
-            enemy.remove()
 
     def _cast_hp_stealer(self, enemy):
         dist = self.distance(enemy)
