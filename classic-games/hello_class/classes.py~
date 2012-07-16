@@ -20,8 +20,8 @@ class Weapon(Item):
     def __init__(self, name, damage, attack_range = 1):
         Item.__init__(self, name)
         self.damage = damage
-        # not yet used
         self.attack_range = attack_range
+        self.is_drawn = False
 
 class StatusBar(object):
     def __init__(self, character = None):
@@ -249,9 +249,13 @@ class Player(Character):
                 for i in range(len(self.items)):
                     if isinstance(self.items[i], Weapon):
                         if i == pos:
+                            self.items[i].is_drawn = True
                             self.weapon = self.items[i]
                             statusbar.set_status("The %s increases your damage by %i points." \
                                 % (self.weapon.name, self.weapon.damage))
+                        else:
+                            # only one weapon in use
+                            self.items[i].is_drawn = False
             else:
                 statusbar.set_status("Item is no weapon.")
         else:
