@@ -11,7 +11,10 @@ Description:     By Ken Price; First entry for Udacity contest ending July 23rd.
                 Intended as possible replaement for game.py
 """
 from Tkinter import *               # For GUI
-from PIL import Image, ImageTk      # For Image conversion
+#from PIL import Image, ImageTk      # For Image conversion
+# Most installations will import it the following way:
+import Image
+import ImageTk
 from classes import *               # game classes
 
 rootTk = Tk()               # Tkinter root object
