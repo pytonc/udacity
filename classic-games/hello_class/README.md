@@ -25,3 +25,4 @@ Functionality mods:
 
     git checkout alexk  # magic and AI related improvements
     python game.py
+
