@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 # game.py - simple game to demonstrate classes and objects
-#TESTTEST
-
 from classes import *
-
+        
 DIRECTIONS = {
     "r": "right",
     "l": "left",
@@ -22,7 +20,7 @@ if __name__ == '__main__':
     a - attack
     gps - print location
     x - exit
-
+    
     There is a Bug 2 steps to the right from you.
     You should probably do something about it!
     """
@@ -34,13 +32,13 @@ if __name__ == '__main__':
     engineer = Wizard(35, 14, 100)
     bug1 = Enemy(12, 10, 100)
     bug2 = Enemy(11, 11, 100)
-
+    
     statusbar.set_character(student)
     world.print_map()
 
     while True:
         c = raw_input("You > ")
-
+        
         if c == "x":
             break
         elif c in DIRECTIONS:
@@ -56,7 +54,7 @@ if __name__ == '__main__':
                 enemies[0].act(student, DIRECTIONS)
         else:
             statusbar.set_status("Unknown command. 'x' to exit game")
-
+            
         statusbar.show()
         world.print_map()
 
