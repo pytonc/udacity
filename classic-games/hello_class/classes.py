@@ -1,12 +1,17 @@
 #!/usr/bin/env python
 # game.py - simple game to demonstrate classes and objects
 import random
+from lib import *
 
 CHR_PLAYER = "S"
 CHR_ENEMY = "B"
 CHR_WIZARD = "W"
 CHR_ARCHER = "A"
 CHR_DEAD = "X"
+CHR_CHEST = "#"
+CHR_ITEM = "*"
+
+INVENTORY_SIZE = 5
 
 class StatusBar(object):
     def __init__(self, character = None):
@@ -74,17 +79,42 @@ class Entity:
     def __init__(self, x, y, image):
         self.x = x
         self.y = y
-        world.map[x][y] = self
         self.image = image
+        
+        if x and y:
+            self.occupy()
     
-    def occupy(self, x, y):
-        world.map[x][y] = self
+    def occupy(self):
+        world.map[self.x][self.y] = self
 
     def remove(self):
         world.map[self.x][self.y] = None
 
     def distance(self, other):
         return abs(other.x - self.x), abs(other.y - self.y)
+
+class Item(Entity):
+    def __init__(self, name, x = None, y = None):
+        Entity.__init__(self, x, y, CHR_ITEM)
+        self.name = name
+        
+class Weapon(Item):
+    def __init__(self, name, damage, attack_range = 1, x = None, y = None):
+        Item.__init__(self, name, x, y)
+        self.damage = damage
+        # not yet used
+        self.attack_range = attack_range
+
+class Chest(Entity):
+    def __init__(self, x, y, items = []):
+        Entity.__init__(self, x, y, CHR_CHEST)
+        self.items = items
+        
+    def open(self):
+        if len(self.items):
+            statusbar.set_status("Chest: %s" % format_items(self.items))
+        else:
+            statusbar.set_status("Chest is empty.")
 
 class Character(Entity):
     def __init__(self, x, y, image, hp, damage = 10):
@@ -123,18 +153,27 @@ class Character(Entity):
         """
             Moves the character to the new position.
         """
+        # No action if dead X-(
+        if not self.hp:
+            return False
+            
         new_x, new_y = self.new_pos(direction)
         if world.is_occupied(new_x, new_y):
             statusbar.set_status('Position is occupied, try another move.')
         else:
             self.remove()
             self.x, self.y = new_x, new_y
-            self.occupy(self.x, self.y)
+            self.occupy()
 
     def attack(self, enemy):
+        # No action if dead X-(
+        if not self.hp:
+            return False
+            
         dist = self.distance(enemy)
         if dist == (0, 1) or dist == (1, 0):
             if not enemy.hp:
+                # just for fun
                 msgs = [
                     "This body doesn't look delicious at all.",
                     "You really want me to do this?",
@@ -146,13 +185,18 @@ class Character(Entity):
                 # Possible damage is depending on physical condition
                 worst = int((self.condition() * 0.01) ** (1/2.) * self.damage + 0.5)
                 best = int((self.condition() * 0.01) ** (1/4.) * self.damage + 0.5)
-                damage = (worst == best) and best or random.randrange(worst, best)
+                damage = (worst == best) and best or random.randint(worst, best)
                 
                 # Possible damage is also depending on sudden adrenaline
                 # rushes and aiming accuracy or at least butterfly flaps
-                damage = random.randrange(
+                damage = random.randint(
                     (damage-1, 0)[not damage],
                     (damage+1, self.damage)[damage == self.damage])
+                    
+                # Check if character class has weapon attribute and character uses a weapon
+                if hasattr(self, 'weapon') and self.weapon:
+                    damage += self.weapon.damage
+                    
                 enemy.harm(damage)
                 
                 if enemy.image == CHR_PLAYER:
@@ -164,13 +208,13 @@ class Character(Entity):
                         statusbar.set_status("You make %i damage: %s has %i/%i hp left." % \
                             (damage, enemy.image, enemy.hp, enemy.max_hp))
         else:
+            # import fun
             msgs = [
                 "Woah! Kicking air really is fun!",
                 "This would be totally ineffective!",
                 "Just scaring the hiding velociraptors..."
                 ]
             statusbar.set_status(random.choice(msgs))
-            
 
     def condition(self):
         return (self.hp * 100) / self.max_hp
@@ -221,20 +265,112 @@ class Character(Entity):
 class Player(Character):
     def __init__(self, x, y, hp):
         Character.__init__(self, x, y, CHR_PLAYER, hp)
+        self.weapon = False
+        
+    def show_items(self):
+        statusbar.set_status(format_items(self.items))
+        
+    def carry_item(self, item):
+        if len(self.items) < INVENTORY_SIZE:
+            self.items.append(item)
+            statusbar.set_status("%s is now in your inventory." % item.name)
+            return True
+        else:
+            statusbar.set_status("You can't carry that much.")
+            return False
     
+    # not yet used and untested
+    def drop(self, pos):
+        """ Drops items from the inventory. Chests are preferred.
+            Otherwise items are dropped to the ground nearby.
+        """
+        if pos not in range(len(self.items)):
+            statusbar.set_status("You don't have that many items.")
+            return False
+            
+        item = self.items.pop(pos)
+        name = item.name
+        
+        chests = []
+        for direction in ['left','right','up','down']:
+            x, y = self.new_pos(direction)
+            if world.is_occupied(x, y) and isinstance(world.map[x][y], Chest):
+                chests.append(world.map[x][y])
+                break
+        
+        if item == self.weapon:
+            self.weapon = False
+                
+        if len(chests):
+            chests[0].items.append(item)
+        else:
+            for direction in ['left','right','up','down']:
+                x, y = self.new_pos(direction)
+                if not world.is_occupied(x, y):
+                    item.x, item.y = x, y
+                    item.occupy()
+                    break
+                    
+        statusbar.set_status("%s dropped." % name)
+    
+    def draw_weapon(self, pos):
+        if pos in range(len(self.items)):
+            if isinstance(self.items[pos], Weapon):
+                self.weapon = self.items[pos]
+                statusbar.set_status("The %s increases your damage by %i points." \
+                    % (self.weapon.name, self.weapon.damage))
+            else:
+                statusbar.set_status("Item is no weapon. It's a %s." % self.items[pos].name)
+        else:
+            statusbar.set_status("You don't have that many items.")
+    
+    def open(self):
+        """ Checks if anything openable is around and if true
+            calls the open method of the object.
+        """
+        for direction in ['left','right','up','down']:
+            x, y = self.new_pos(direction)
+            # tuple of openable classes like doors etc.
+            # NEEDS TO BE A TUPLE!
+            possibles = (Chest)
+            if world.is_occupied(x, y) and isinstance(world.map[x][y], possibles):
+                world.map[x][y].open()
+                return
+        
+        statusbar.set_status("Nothing to open around.")
+            
+    def pick(self, n = None):
+        # checkout if anything openable is around
+        for direction in ['left','right','up','down']:
+            x, y = self.new_pos(direction)
+            # tuple of pickable classes like Items, Chests etc.
+            # NEEDS TO BE A TUPLE!
+            if world.is_occupied(x, y):
+                if isinstance(world.map[x][y], Item):
+                    self.carry_item(world.map[x][y])
+                    # don't display item on map if picked up
+                    world.map[x][y].remove()
+                    return
+                if isinstance(world.map[x][y], Chest):
+                    if n in range(len(world.map[x][y].items)):
+                        item = world.map[x][y].items[n]
+                        if self.carry_item(item):
+                            world.map[x][y].items.remove(item)
+                    else:
+                        statusbar.set_status("Specify which item to pick.")
+                    return
+                     
+        statusbar.set_status("Nothing to pick up.")
+            
 class Enemy(Character):
     def __init__(self, x, y, hp):
         Character.__init__(self, x, y, CHR_ENEMY, hp)
 
-    # not used
+    # not yet used
     def challenge(self, other):
         print "Let's fight!"
         
     def act(self, character, directions):
-        # No action if dead X-(
-        if not self.hp:
-            return False
-            
         choices = [0, 1]
         
         dist = self.distance(character)
@@ -243,7 +379,7 @@ class Enemy(Character):
         choice = random.choice(choices)
         
         if choice == 1:
-            # Running away
+            # Moving
             while (True):
                 goto = directions[random.choice(directions.keys())]
                 new_x, new_y = self.new_pos(goto)
