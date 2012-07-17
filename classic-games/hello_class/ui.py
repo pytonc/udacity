@@ -31,4 +31,13 @@ class UserInterface(object):
     def set_statusbar_character(self, character):
         self.statusbar.set_character(character)
 
+
+class StatusBar(object):
+    def __init__(self, character=None):
+        self.character = character
+        self.msg = ''
+
+    def set_msg(msg=''):
+        self.msg = msg
+
 # vim: expandtab tabstop=4 shiftwidth=4 softtabstop=4

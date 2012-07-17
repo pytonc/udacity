@@ -4,6 +4,7 @@ import os
 import sys
 import classes
 from ui import UserInterface
+from ui import StatusBar
 
 
 # This class defines the ASCII UI frontend
@@ -16,8 +17,8 @@ class TXTUserInterface(UserInterface):
 
     def __init__(self, game_handler, width=60, height=22):
         super(TXTUserInterface, self).__init__(game_handler, width, height)
-        self.world_map = WorldMap(width, height)
-        self.statusbar = StatusBar(self.world_map)
+        self.world_map = TXTWorldMap(width, height)
+        self.statusbar = TXTStatusBar(self.world_map)
 
         print """Welcome to 'Hello, Class' game
         Available commands are:
@@ -47,17 +48,17 @@ class TXTUserInterface(UserInterface):
         return self.student
 
     def add_student(self, attributes):
-        student = Player(self, attributes)
+        student = TXTPlayer(self, attributes)
         self.student = student
         self.world_map.add_character(self.student)
 
     def add_engineer(self, attributes):
-        wizard = Wizard(self, attributes)
+        wizard = TXTWizard(self, attributes)
         self.engineer = wizard
         self.world_map.add_character(self.engineer)
 
     def add_enemy(self, attributes):
-        bug = Enemy(self, attributes)
+        bug = TXTEnemy(self, attributes)
         self.bugs.append(bug)
         self.world_map.add_character(bug)
 
@@ -83,9 +84,6 @@ class TXTUserInterface(UserInterface):
             elif c == "save":
                 self.game_handler.save_game()
                 self.set_status("Game saved!")
-            elif c == "load":
-                self.game_handler.load_saved_game()
-                self.set_status("Game reloaded!")
             else:
                 self.set_status("Unknown command. 'x' to exit game")
 
@@ -93,9 +91,9 @@ class TXTUserInterface(UserInterface):
 
 
 # Canvas / Layout classes
-class StatusBar(classes.StatusBar):
+class TXTStatusBar(StatusBar):
     def __init__(self, world_map, character=None):
-        super(StatusBar, self).__init__(character)
+        super(TXTStatusBar, self).__init__(character)
         self.world_map = world_map
 
     def format_line(self, txt, width):
@@ -127,9 +125,9 @@ class StatusBar(classes.StatusBar):
             self.line2 = "%s + %s" % (' ' * len(status), ' ' * len(msgs[0]))
 
 
-class WorldMap(classes.WorldMap):
+class TXTWorldMap(classes.WorldMap):
     def __init__(self, width, height):
-        super(WorldMap, self).__init__(width, height)
+        super(TXTWorldMap, self).__init__(width, height)
 
     def print_map(self):
         print '+' * (self.width + 2)
@@ -152,12 +150,12 @@ class WorldMap(classes.WorldMap):
 
 
 # Base Character class
-class Character(classes.Character):
+class TXTCharacter(classes.Character):
     def __init__(self, ui, attributes):
         pos_x = int(attributes[0])
         pos_y = int(attributes[1])
         hp = int(attributes[2])
-        super(Character, self).__init__(ui, pos_x, pos_y, hp)
+        super(TXTCharacter, self).__init__(ui, pos_x, pos_y, hp)
 
     def is_player(self):
         if self.image == TXTUserInterface.CHR_PLAYER:
@@ -172,27 +170,27 @@ class Character(classes.Character):
         return self.image
 
 
-class Player(Character, classes.Player):
+class TXTPlayer(TXTCharacter, classes.Player):
     def __init__(self, ui, attributes):
-        Character.__init__(self, ui, attributes)
+        TXTCharacter.__init__(self, ui, attributes)
         self.image = TXTUserInterface.CHR_PLAYER
 
 
-class Enemy(Character, classes.Enemy):
+class TXTEnemy(TXTCharacter, classes.Enemy):
     def __init__(self, ui, attributes):
-        Character.__init__(self, ui, attributes)
+        TXTCharacter.__init__(self, ui, attributes)
         self.image = TXTUserInterface.CHR_ENEMY
 
 
-class Wizard(Character, classes.Wizard):
+class TXTWizard(TXTCharacter, classes.Wizard):
     def __init__(self, ui, attributes):
-        Character.__init__(self, ui, attributes)
+        TXTCharacter.__init__(self, ui, attributes)
         self.image = TXTUserInterface.CHR_WIZARD
 
 
-class Archer(Character, classes.Archer):
+class TXTArcher(TXTCharacter, classes.Archer):
     def __init__(self, ui, attributes):
-        Character.__init__(self, ui, attributes)
+        TXTCharacter.__init__(self, ui, attributes)
         self.image = TXTUserInterface.CHR_ARCHER
 
 # vim: expandtab tabstop=4 shiftwidth=4 softtabstop=4

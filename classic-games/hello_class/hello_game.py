@@ -8,6 +8,9 @@ from ui_txt import *
 import pickle
 
 
+# This class implements what we could call a game handler
+# It's responsible for parsing the configuration, setting up
+# the characters and the UI and handling the end of the game
 class HelloGame(object):
     def __init__(self, config, frontend="sdl"):
         self.config = config
@@ -52,6 +55,9 @@ class HelloGame(object):
 
         self.ui.draw_window()
         self.ui.mainloop()
+
+    def game_over():
+        sys.exit(1)
 
     def save_game(self):
         outfile = open(self.savefile, "wb")

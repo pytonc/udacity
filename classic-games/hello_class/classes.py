@@ -3,15 +3,6 @@
 import random
 
 
-class StatusBar(object):
-    def __init__(self, character=None):
-        self.character = character
-        self.msg = ''
-
-    def set_msg(msg=''):
-        self.msg = msg
-
-
 class WorldMap(object):
     def __init__(self, width, height):
         self.width = width
