@@ -27,11 +27,10 @@ if __name__ == '__main__':
 
     # initializing some entities
 
-    #campus = World(100, 100)
-    student = Player(10, 10, 100)
-    #engineer = Wizard(35, 14, 100)
-    bug1 = Enemy(12, 10, 100)
-    bug2 = Enemy(11, 11, 100)
+    student = Player(10, 10)
+    engineer = Wizard(35, 14)
+    bug1 = Enemy(15, 10)
+    bug2 = Enemy(11, 12)
     
     statusbar.set_character(student)
     world.print_map()
