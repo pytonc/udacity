@@ -3,7 +3,6 @@
 
 # Hacked by MikeGoldberg to use Pygame
 # Mon Jul 16 12:51:31 CDT 2012
-# Just making a change to exeriment with git.
 
 from classes import *
 import pygame
