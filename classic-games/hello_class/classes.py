@@ -115,23 +115,23 @@ class Fountains(Facility):
         if self.hp == 0:
             print("I'm deeply sorry, but I'm empty :(")
         else:
-            if Player.hp == 0:
+            if character.hp == 0:
                 print("I see, you are dead...so sorry! But I can make you alive again!")
                 print("But with one condition! You have to promise me you will become an ascetic.")
-                print("If you agree, as a first step, you throw away all your items.")
-                choice = raw_input("Are you agree?")
-                if choice == "Yes":
-                    Player.items = []
-                    Player.hp = character.max_hp
-                    Player.image = CHR_PLAYER
-                else:
-                    print("Greed kills.")
+                print("I need your clothes and motocicle.")
+                character.items = []
+                character.hp = character.max_hp
+
 
             else:
-                while (self.distance(character) == (0,1) or self.distance(character) == (1,0)):
-                    character.hp += 10
-                    self.hp -= 10
-                    break
+                if (self.distance(character) == (0,1) or self.distance(character) == (1,0)):
+                    while True:
+                        character.hp += 10
+                        self.hp -= 10
+                else:
+                    return None
+
+
 
 class Character(Entity):
     def __init__(self, x, y, image, damage, hp = 100):
@@ -186,7 +186,7 @@ class Character(Entity):
                 if not world.is_occupied(new_x, new_y):
                     self.move(goto)
                     break
-                break
+
 
     def hunt(self, character, directions, steps):
         while self.hp != 0:
@@ -249,13 +249,6 @@ class Character(Entity):
                     else:
                         statusbar.set_status("You make %i damage: %s has %i/%i hp left." % \
                             (damage, enemy.image, enemy.hp, enemy.max_hp))
-           # else:
-            #    msgs = [
-             #       "Woah! Kicking air really is fun!",
-              #      "This would be totally ineffective!",
-               #     "Just scaring the hiding velociraptors..."
-                #    ]
-                #statusbar.set_status(random.choice(msgs))
 
 
     def condition(self):
@@ -415,7 +408,7 @@ class Monk(Minor_Characters):
 
     def heal(self, friend):
         self.hp -= 2
-        enemy.hp +=5
+        friend.hp +=5
         self.mana -=5
 
 
