@@ -2,30 +2,26 @@
 # game.py - simple game to demonstrate classes and objects
 import random
 
-class StatusBar(object):
-    def __init__(self, character = None):
-        self.character = character
-        self.msg = ''
-    
-	def set_msg(msg = ''):
-		self.msg = msg
 
 class WorldMap(object):
     def __init__(self, width, height):
         self.width = width
         self.height = height
-        self.map = [[None for y in range(self.height)] for x in range(self.width)]
+        self.map = [[None for y in range(self.height)]
+                    for x in range(self.width)]
 
     def is_occupied(self, x, y):
-        ''' Checks if a given space on the map and returns True if occupied. '''
+        ''' Checks if a given space on the map and
+        returns True if occupied. '''
         return self.map[x][y] is not None
+
 
 class Entity(object):
     def __init__(self, world_map, x, y):
         self.x = x
         self.y = y
         self.world = world_map
-    
+
     def occupy(self, x, y):
         self.world.map[x][y] = self
 
@@ -35,15 +31,17 @@ class Entity(object):
     def distance(self, other):
         return abs(other.x - self.x), abs(other.y - self.y)
 
+
 class Character(Entity):
-    def __init__(self, ui, x, y, hp, damage = 10):
+    def __init__(self, ui, x, y, hp, damage=10):
         Entity.__init__(self, ui.world_map, x, y)
         self.hp, self.max_hp = hp, hp
         self.damage = damage
         self.items = []
         self.ui = ui
         self.world = ui.world_map
-        #print "Created character with position x = " + str(self.x) + " y = " + str(self.y)
+        #print "Created character with position x = "
+        #        + str(self.x) + " y = " + str(self.y)
 
     def is_dead(self):
         if self.hp <= 0:
@@ -67,8 +65,8 @@ class Character(Entity):
 
     def new_pos(self, direction):
         '''
-            Calculates a new position given a direction. Takes as input a 
-            direction 'left', 'right', 'up' or 'down'. Allows wrapping of the 
+            Calculates a new position given a direction. Takes as input a
+            direction 'left', 'right', 'up' or 'down'. Allows wrapping of the
             world map (eg. moving left from x = 0 moves you to x = -1)
         '''
         dx, dy = self._direction_to_dxdy(direction)
@@ -102,24 +100,24 @@ class Character(Entity):
                 self.ui.set_status(random.choice(msgs))
             else:
                 # Possible damage is depending on physical condition
-                worst = int((self.condition() * 0.01) ** (1/2.) * self.damage + 0.5)
-                best = int((self.condition() * 0.01) ** (1/4.) * self.damage + 0.5)
+                worst = int((self.condition() * 0.01) ** (1 / 2.) * self.damage + 0.5)
+                best = int((self.condition() * 0.01) ** (1 / 4.) * self.damage + 0.5)
                 damage = (worst == best) and best or random.randrange(worst, best)
-                
+
                 # Possible damage is also depending on sudden adrenaline
                 # rushes and aiming accuracy or at least butterfly flaps
                 damage = random.randrange(
-                    (damage-1, 0)[not damage],
-                    (damage+1, self.damage)[damage == self.damage])
+                    (damage - 1, 0)[not damage],
+                    (damage + 1, self.damage)[damage == self.damage])
                 enemy.harm(damage)
-                
+
                 if enemy.is_player():
                     self.ui.set_status("You are being attacked: %i damage." % damage)
                 elif self.is_player():
                     if enemy.is_dead():
                         self.ui.set_status("You make %i damage: your enemy is dead." % damage)
                     else:
-                        self.ui.set_status("You make %i damage: %s has %i/%i hp left." % \
+                        self.ui.set_status("You make %i damage: %s has %i/%i hp left." %
                             (damage, enemy.get_label(), enemy.hp, enemy.max_hp))
         else:
             msgs = [
@@ -128,7 +126,6 @@ class Character(Entity):
                 "Just scaring the hiding velociraptors..."
                 ]
             self.ui.set_status(random.choice(msgs))
-            
 
     def condition(self):
         return (self.hp * 100) / self.max_hp
@@ -157,7 +154,7 @@ class Character(Entity):
         either horizontally or vertically.
         """
         enemies = []
-        for dist in range(1, max_dist+1):
+        for dist in range(1, max_dist + 1):
             enemies.extend(self.get_all_enemies_at_distance(dist))
         return enemies
 
@@ -175,29 +172,31 @@ class Character(Entity):
         enemies = self.get_all_enemies(max_dist)
         return [enemy for enemy in enemies if enemy.hp > 0]
 
+
 class Player(Character):
     def __init__(self, ui, x, y, hp):
         Character.__init__(self, ui, x, y, hp)
-    
+
+
 class Enemy(Character):
     def __init__(self, ui, x, y, hp):
         Character.__init__(self, ui, x, y, hp)
 
     def challenge(self, other):
         print "Let's fight!"
-        
+
     def act(self, character, directions):
         # No action if dead X-(
         if not self.hp:
             return False
-            
+
         choices = [0, 1]
-        
+
         dist = self.distance(character)
         if dist == (0, 1) or dist == (1, 0):
             choices.append(2)
         choice = random.choice(choices)
-        
+
         if choice == 1:
             # Running away
             while (True):
@@ -210,10 +209,11 @@ class Enemy(Character):
             # Fighting back
             self.attack(character)
 
+
 class Wizard(Character):
     def __init__(self, ui, x, y, hp):
         Character.__init__(self, ui, x, y, hp)
-    
+
     def _cast_remove(self, enemy):
         dist = self.distance(enemy)
         if dist == (0, 1) or dist == (1, 0):
@@ -234,10 +234,11 @@ class Wizard(Character):
             enemy.harm(3)
             self.hp += 3
 
+
 class Archer(Character):
     def __init__(self, ui, x, y, hp):
         Character.__init__(self, ui, x, y, hp)
-    
+
     def range_attack(self, enemy):
         dist = self.distance(enemy)
         if (dist[0] <= 5 and dist[1] == 0) or (dist[0] == 0 and dist[1] <= 5):

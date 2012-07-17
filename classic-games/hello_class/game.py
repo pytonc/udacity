@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 # game.py - simple game to demonstrate classes and objects
-import getopt, sys
+import getopt
+import sys
 import ConfigParser
 from hello_game import HelloGame
 
 import time
+
 
 def print_help():
     print sys.argv[0] + ' -h|--help -g|--gui=sdl'
@@ -45,15 +47,15 @@ if __name__ == '__main__':
     try:
         config.read(config_file)
     except:
-       print "Error reading config file " + config_file
-       sys.exit(3)
+        print "Error reading config file " + config_file
+        sys.exit(3)
 
-    if frontend != None:
-        game = HelloGame(config, frontend = frontend)
+    if frontend is not None:
+        game = HelloGame(config, frontend=frontend)
     else:
         game = HelloGame(config)
 
-    game.start_game("Level1");
+    game.start_game("Level1")
     sys.exit(0)
 
 # vim: expandtab tabstop=4 shiftwidth=4 softtabstop=4

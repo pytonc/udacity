@@ -1,15 +1,17 @@
 #!/usr/bin/env python
 
-import os, sys
+import os
 import classes
-from ui import UserInterface
-import pygame, sys, time
+import time
+import pygame
 from pygame.locals import *
+from ui import UserInterface
+from ui import StatusBar
+
 
 ##
 # This class defines the PyGame/SDL UI frontend
 ##
-
 class SDLUserInterface(UserInterface):
     # Colors Names
     WHITE = (255, 255, 255)
@@ -47,9 +49,12 @@ class SDLUserInterface(UserInterface):
     CHR_TXT_DEAD = "D"
 
     # Sizes
-    STATUSBAR_HEIGHT=30
-    FONT_SIZE=25
-    CHR_SIZE=20
+    STATUSBAR_HEIGHT = 30
+    FONT_SIZE = 25
+    CHR_SIZE = 20
+
+    # Frames per Second
+    FRAME_RATE = 25
 
     # Directions
     DIRECTIONS = {
@@ -59,8 +64,7 @@ class SDLUserInterface(UserInterface):
         K_UP: "up"
     }
 
-
-    def __init__(self, game_handler, width = 60, height = 22):
+    def __init__(self, game_handler, width=60, height=22):
         super(SDLUserInterface, self).__init__(game_handler, width, height)
 
         # Define the coordinates for each main area
@@ -86,7 +90,7 @@ class SDLUserInterface(UserInterface):
         # Topbar coords
         topbar_x = 0
         topbar_y = 0
-  
+
         # Map coords
         map_x = 0
         map_y = topbar_x + SDLUserInterface.STATUSBAR_HEIGHT
@@ -106,6 +110,8 @@ class SDLUserInterface(UserInterface):
         # Initialize PyGame
         pygame.init()
         pygame.display.set_caption('Hello Game')
+        self.clock = pygame.time.Clock()
+
         # We don't want to use the mouse (... yet)
         pygame.mouse.set_visible(0)
 
@@ -113,58 +119,59 @@ class SDLUserInterface(UserInterface):
         basicFont = pygame.font.SysFont(None, SDLUserInterface.FONT_SIZE)
 
         # Build the Main Window
-        self.windowSurface = pygame.display.set_mode((window_width, window_height),
+        self.windowSurface = pygame.display.set_mode((window_width,
+                                window_height),
                                 0, 32)
 
         # Build the WorldMap
-        self.world_map = WorldMap(self.windowSurface,
+        self.world_map = SDLWorldMap(self.windowSurface,
                             map_x, map_y,
                             width, height)
 
         # Build the topbar
-        self.topbar = TopBar(basicFont,
+        self.topbar = SDLTopBar(basicFont,
                         self.windowSurface,
                         self.world_map,
-                        pos_x = topbar_x,
-                        pos_y = topbar_y)
+                        pos_x=topbar_x,
+                        pos_y=topbar_y)
 
         # Build the bottombar
-        self.bottombar = BottomBar(basicFont,
+        self.bottombar = SDLBottomBar(basicFont,
                             self.windowSurface,
                             self.world_map,
-                            pos_x = bottombar_x,
-                            pos_y = bottombar_y)
+                            pos_x=bottombar_x,
+                            pos_y=bottombar_y)
 
     def draw_window(self):
         self.windowSurface.fill(SDLUserInterface.CHR_COLOR_BACKGROUND)
         self.topbar.show()
-        self.bottombar.show()
         self.world_map.print_map()
+        self.bottombar.show()
         pygame.display.update()
-        
+
     def set_statusbar_character(self, character):
         self.bottombar.set_character(character)
 
     def set_status(self, msg):
-        self.bottombar.set_status(msg)
+        self.bottombar.set_message(msg)
 
     def get_student(self):
         return self.student
 
     def add_student(self, attributes):
-        student = Player(self, attributes)
+        student = SDLPlayer(self, attributes)
         self.student = student
         student.show()
         self.world_map.add_character(self.student)
 
     def add_engineer(self, attributes):
-        wizard = Wizard(self, attributes)
+        wizard = SDLWizard(self, attributes)
         self.engineer = wizard
         wizard.show()
         self.world_map.add_character(self.engineer)
 
     def add_enemy(self, attributes):
-        bug = Enemy(self, attributes)
+        bug = SDLEnemy(self, attributes)
         self.bugs.append(bug)
         bug.show()
         self.world_map.add_character(bug)
@@ -175,12 +182,12 @@ class SDLUserInterface(UserInterface):
 
     def mainloop(self):
         while True:
+            tickFPS = self.clock.tick(SDLUserInterface.FRAME_RATE)
             for event in pygame.event.get():
                 if event.type == QUIT:
-                   self.exit_loop()
+                    self.exit_loop()
                 elif event.type == KEYDOWN:
                     if event.key in (K_LEFT, K_RIGHT, K_UP, K_DOWN):
-                        #print "Got keypress " + str(event.key)
                         self.student.move(SDLUserInterface.DIRECTIONS[event.key])
                         for bug in self.bugs:
                             bug.act(self.student,
@@ -193,17 +200,15 @@ class SDLUserInterface(UserInterface):
                             bug.act(self.student,
                                     SDLUserInterface.DIRECTIONS)
 
-                self.draw_window()
-
 
 ##
 # Canvas / Layout classes
 ##
-class StatusBar(classes.StatusBar):
+class SDLStatusBar(StatusBar):
     def __init__(self, basicFont, windowSurface, world_map,
-            pos_x = 0, pos_y = 0,
-            character = None):
-        super(StatusBar, self).__init__(character)
+            pos_x=0, pos_y=0,
+            character=None):
+        super(SDLStatusBar, self).__init__(character)
 
         self.pos_x = pos_x
         self.pos_y = pos_y
@@ -215,57 +220,54 @@ class StatusBar(classes.StatusBar):
         self.textRect = self.text.get_rect()
         self.textRect.topleft = (self.pos_x, self.pos_y)
         self.windowSurface.blit(self.text, self.textRect)
-        pygame.display.update()
 
     def set_character(self, character):
         self.character = character
-        self.set_status()
+        # XXX self.set_message()
 
     def render_text(self):
         self.text = self.basic_font.render(self.text_msg, True,
                 self.text_fg, self.text_bg)
 
-    def set_status(self, msg = ''):
+    def set_message(self, msg=''):
         self.text_msg = msg
         self.render_text()
 
 
-class TopBar(StatusBar):
+class SDLTopBar(SDLStatusBar):
     def __init__(self, basicFont, windowSurface, world_map,
-            pos_x = 0, pos_y = 0, character = None):
-        super(TopBar, self).__init__(basicFont, windowSurface, world_map,
-                pos_x = pos_x, pos_y = pos_y, character = character)
+            pos_x=0, pos_y=0, character=None):
+        super(SDLTopBar, self).__init__(basicFont, windowSurface, world_map,
+                pos_x=pos_x, pos_y=pos_y, character=character)
 
         self.text_fg = SDLUserInterface.WHITE
         self.text_bg = SDLUserInterface.BLUE
-        self.set_status('Use arrow keys to move, "a" to attack and "x" to exit')
+        self.set_message('Use arrow keys to move, "a" to attack and "x" to exit')
 
 
-class BottomBar(StatusBar):
+class SDLBottomBar(SDLStatusBar):
     def __init__(self, basicFont, windowSurface, world_map,
-            pos_x, pos_y, character = None):
-        super(BottomBar, self).__init__(basicFont, windowSurface, world_map,
-                pos_x = pos_x, pos_y = pos_y, character = character)
+            pos_x, pos_y, character=None):
+        super(SDLBottomBar, self).__init__(basicFont, windowSurface, world_map,
+                pos_x=pos_x, pos_y=pos_y, character=character)
 
         self.text_fg = SDLUserInterface.WHITE
         self.text_bg = SDLUserInterface.RED
-        self.set_status ('Use arrow keys to move, "a" to attack and "x" to exit')
+        self.set_message('Use arrow keys to move, "a" to attack and "x" to exit')
 
 
 ##
 # UI representation of the WorldMap
 ##
-class WorldMap(classes.WorldMap):
+class SDLWorldMap(classes.WorldMap):
     def __init__(self, pos_x, pos_y, windowSurface, width, height):
-        super(WorldMap, self).__init__(width, height)
+        super(SDLWorldMap, self).__init__(width, height)
 
     def print_map(self):
-        #print "Printing the map of width = " + str(self.width) + " and height = " + str(self.height)
         for y in range(self.height):
             for x in range(self.width):
                 cell = self.map[x][y]
                 if cell is not None:
-                    #print "Calling show() method for element at position x = " + str(x) + " y = " + str(y)
                     cell.show()
 
     def add_character(self, character):
@@ -278,12 +280,12 @@ class WorldMap(classes.WorldMap):
 ##
 # Base Character class
 ##
-class Character(classes.Character):
+class SDLCharacter(classes.Character):
     def __init__(self, ui, attributes):
         pos_x = int(attributes[0])
         pos_y = int(attributes[1])
         hp = int(attributes[2])
-        super(Character, self).__init__(ui, pos_x, pos_y, hp)
+        super(SDLCharacter, self).__init__(ui, pos_x, pos_y, hp)
         self.windowSurface = ui.windowSurface
 
     def is_player(self):
@@ -311,27 +313,30 @@ class Character(classes.Character):
 ##
 # All the characters
 ##
-class Player(Character, classes.Player):
+class SDLPlayer(SDLCharacter, classes.Player):
     def __init__(self, ui, attributes):
-        Character.__init__(self, ui, attributes)
+        SDLCharacter.__init__(self, ui, attributes)
         self.text = SDLUserInterface.CHR_TXT_PLAYER
         self.color = SDLUserInterface.CHR_COLOR_PLAYER
 
-class Enemy(Character, classes.Enemy):
+
+class SDLEnemy(SDLCharacter, classes.Enemy):
     def __init__(self, ui, attributes):
-        Character.__init__(self, ui, attributes)
+        SDLCharacter.__init__(self, ui, attributes)
         self.text = SDLUserInterface.CHR_TXT_ENEMY
         self.color = SDLUserInterface.CHR_COLOR_ENEMY
 
-class Wizard(Character, classes.Wizard):
+
+class SDLWizard(SDLCharacter, classes.Wizard):
     def __init__(self, ui, attributes):
-        Character.__init__(self, ui, attributes)
+        SDLCharacter.__init__(self, ui, attributes)
         self.text = SDLUserInterface.CHR_TXT_WIZARD
         self.color = SDLUserInterface.CHR_COLOR_WIZARD
 
-class Archer(Character, classes.Archer):
+
+class SDLArcher(SDLCharacter, classes.Archer):
     def __init__(self, ui, attributes):
-        Character.__init__(self, ui, attributes)
+        SDLCharacter.__init__(self, ui, attributes)
         self.text = SDLUserInterface.CHR_TXT_ARCHER
         self.color = SDLUserInterface.CHR_COLOR_ARCHER
 
