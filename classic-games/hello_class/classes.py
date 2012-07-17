@@ -9,19 +9,9 @@ CHR_WIZARD = "W"
 CHR_ARCHER = "A"
 CHR_DEAD = "X"
 CHR_CHEST = "#"
+CHR_ITEM = "*"
 
 INVENTORY_SIZE = 5
-
-class Item(object):
-    def __init__(self, name):
-        self.name = name
-        
-class Weapon(Item):
-    def __init__(self, name, damage, attack_range = 1):
-        Item.__init__(self, name)
-        self.damage = damage
-        # not yet used
-        self.attack_range = attack_range
 
 class StatusBar(object):
     def __init__(self, character = None):
@@ -89,17 +79,31 @@ class Entity:
     def __init__(self, x, y, image):
         self.x = x
         self.y = y
-        world.map[x][y] = self
         self.image = image
+        
+        if x and y:
+            self.occupy()
     
-    def occupy(self, x, y):
-        world.map[x][y] = self
+    def occupy(self):
+        world.map[self.x][self.y] = self
 
     def remove(self):
         world.map[self.x][self.y] = None
 
     def distance(self, other):
         return abs(other.x - self.x), abs(other.y - self.y)
+
+class Item(Entity):
+    def __init__(self, name, x = None, y = None):
+        Entity.__init__(self, x, y, CHR_ITEM)
+        self.name = name
+        
+class Weapon(Item):
+    def __init__(self, name, damage, attack_range = 1, x = None, y = None):
+        Item.__init__(self, name, x, y)
+        self.damage = damage
+        # not yet used
+        self.attack_range = attack_range
 
 class Chest(Entity):
     def __init__(self, x, y, items = []):
@@ -108,7 +112,7 @@ class Chest(Entity):
         
     def open(self):
         if len(self.items):
-            statusbar.set_status(format_items(self.items))
+            statusbar.set_status("Chest: %s" % format_items(self.items))
         else:
             statusbar.set_status("Chest is empty.")
 
@@ -159,7 +163,7 @@ class Character(Entity):
         else:
             self.remove()
             self.x, self.y = new_x, new_y
-            self.occupy(self.x, self.y)
+            self.occupy()
 
     def attack(self, enemy):
         # No action if dead X-(
@@ -239,24 +243,54 @@ class Player(Character):
             return False
     
     # not yet used and untested
-    def drop_item(self, item):
-        name = self.items.pop(item).name
+    def drop(self, pos):
+        """ Drops items from the inventory. Chests are preferred.
+            Otherwise items are dropped to the ground nearby.
+        """
+        if pos not in range(len(self.items)):
+            statusbar.set_status("You don't have that many items.")
+            return False
+            
+        item = self.items.pop(pos)
+        name = item.name
+        
+        chests = []
+        for direction in ['left','right','up','down']:
+            x, y = self.new_pos(direction)
+            if world.is_occupied(x, y) and isinstance(world.map[x][y], Chest):
+                chests.append(world.map[x][y])
+                break
+        
+        if item == self.weapon:
+            self.weapon = False
+                
+        if len(chests):
+            chests[0].items.append(item)
+        else:
+            for direction in ['left','right','up','down']:
+                x, y = self.new_pos(direction)
+                if not world.is_occupied(x, y):
+                    item.x, item.y = x, y
+                    item.occupy()
+                    break
+                    
         statusbar.set_status("%s dropped." % name)
     
     def draw_weapon(self, pos):
-        if pos in range(0, len(self.items)):
+        if pos in range(len(self.items)):
             if isinstance(self.items[pos], Weapon):
                 self.weapon = self.items[pos]
                 statusbar.set_status("The %s increases your damage by %i points." \
                     % (self.weapon.name, self.weapon.damage))
             else:
-                statusbar.set_status("Item is no weapon.")
+                statusbar.set_status("Item is no weapon. It's a %s." % self.items[pos].name)
         else:
-            statusbar.set_status("You don't have that much items.")
+            statusbar.set_status("You don't have that many items.")
     
     def open(self):
-        anything_to_open = False
-        # checkout if anything openable is around
+        """ Checks if anything openable is around and if true
+            calls the open method of the object.
+        """
         for direction in ['left','right','up','down']:
             x, y = self.new_pos(direction)
             # tuple of openable classes like doors etc.
@@ -264,13 +298,11 @@ class Player(Character):
             possibles = (Chest)
             if world.is_occupied(x, y) and isinstance(world.map[x][y], possibles):
                 world.map[x][y].open()
-                anything_to_open = True
+                return
         
-        if not anything_to_open:
-            statusbar.set_status("Nothing to open around.")
+        statusbar.set_status("Nothing to open around.")
             
     def pick(self, n = None):
-        anything_to_pick = False
         # checkout if anything openable is around
         for direction in ['left','right','up','down']:
             x, y = self.new_pos(direction)
@@ -279,7 +311,9 @@ class Player(Character):
             if world.is_occupied(x, y):
                 if isinstance(world.map[x][y], Item):
                     self.carry_item(world.map[x][y])
-                    anything_to_pick = True
+                    # don't display item on map if picked up
+                    world.map[x][y].remove()
+                    return
                 if isinstance(world.map[x][y], Chest):
                     if n in range(len(world.map[x][y].items)):
                         item = world.map[x][y].items[n]
@@ -287,10 +321,9 @@ class Player(Character):
                             world.map[x][y].items.remove(item)
                     else:
                         statusbar.set_status("Specify which item to pick.")
-                    anything_to_pick = True
+                    return
                      
-        if not anything_to_pick:
-            statusbar.set_status("Nothing to pick up.")
+        statusbar.set_status("Nothing to pick up.")
             
 class Enemy(Character):
     def __init__(self, x, y, hp):

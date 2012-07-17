@@ -19,12 +19,14 @@ if __name__ == '__main__':
     d - move down
     a - attack
     i - show list of items
-    p ([n]) - pick something up or pick an item [n] from an inventory
+    p ([n]) - pick something up or pick an item [n] from a chest
+    drop [n] - put an item [n] in a chest or drop it
     draw [n] - draw weapon with position [n] in inventory
     gps - print location
     x - exit
     
     There is a Bug 2 steps to the right from you.
+    In the chest to your left might be something that helps.
     You should probably do something about it!
     """
 
@@ -34,7 +36,8 @@ if __name__ == '__main__':
     student = Player(10, 10, 100)
     engineer = Wizard(35, 14, 100)
     bug1 = Enemy(12, 10, 100)
-    chest = Chest(5, 5, [Weapon('Knife', 2)])
+    chest = Chest(7, 9, [Weapon('Knife', 2)])
+    screw = Item('Screw', 20, 6)
     
     statusbar.set_character(student)
     world.print_map()
@@ -64,6 +67,10 @@ if __name__ == '__main__':
                 student.pick(int(l[-1]))
             else:
                 student.pick()
+        elif c.startswith("drop"):
+            l = c.split()
+            if len(l) == 2 and l[-1].isdigit():
+                student.drop(int(l[-1]))
         elif c.startswith("draw"):
             l = c.split()
             if len(l) == 2 and l[-1].isdigit():
