@@ -246,9 +246,12 @@ class Player(Character):
     def draw_weapon(self, pos):
         if pos in range(0, len(self.items)):
             if isinstance(self.items[pos], Weapon):
-                self.weapon = self.items[pos]
-                statusbar.set_status("The %s increases your damage by %i points." \
-                    % (self.weapon.name, self.weapon.damage))
+                for i in range(len(self.items)):
+                    if isinstance(self.items[i], Weapon):
+                        if i == pos:
+                            self.weapon = self.items[i]
+                            statusbar.set_status("The %s increases your damage by %i points." \
+                                % (self.weapon.name, self.weapon.damage))
             else:
                 statusbar.set_status("Item is no weapon.")
         else:
