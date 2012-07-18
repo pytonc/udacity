@@ -9,6 +9,12 @@ CHR_ARCHER = "A"
 CHR_DEAD = "X"
 CHR_FOUNTAIN = "F"
 CHR_MONK = "M"
+CHR_TREE = "T"
+CHR_LEAF = "L"
+CHR_GATE = "GT"
+CHR_WALL = "WL"
+CHR_TRAFFIC_LIGHT_RED = "TLR"
+CHR_TRAFFIC_LIGHT_GREEN = "TLG"
 #DIRECTIONS = {"r": "right", "l": "left", "d": "down", "u": "up"}
 
 
@@ -97,41 +103,106 @@ class Entity:
     def distance_y(self, other):
         return (other.y - self.y)
 
-
-
-class Facility(Entity):
-
+class Environment(Entity):
     def __init__(self, x, y, amount, image):
         Entity.__init__(self, x, y, image)
         for f in range(amount):
             self.occupy(random.randint(1, world.width-1), random.randint(1, world.height-1))
 
-class Fountains(Facility):
-    def __init__(self, x, y, amount, hp=100):
-        Facility.__init__(self, x, y, amount, CHR_FOUNTAIN)
+class Tree(Environment):
+    def __init__(self, x, y, amount):
+        Environment.__init__(self, x, y, amount, CHR_TREE)
 
+class Leaf_Tree(Environment):
+    def __init__(self, x, y, amount):
+        Environment.__init__(self, x, y, amount, CHR_LEAF)
+
+class Facility(Entity):
+    def __init__(self, x, y, image):
+        Entity.__init__(self, x, y, image)
+        self.occupy(x, y)
+
+class Gate(Facility):
+    def __init__(self, x, y):
+        Facility.__init__(self, x, y, CHR_GATE)
+
+    def open_close(self, character):
+        x_gates = self.x
+        y_gates = self.y
+        while True:
+            if ((self.distance(character) == (0,1) or self.distance(character) == (1,0)) or self.distance(character) == (1,1)):
+                self.remove()
+                break
+            else:
+                self.occupy(x_gates, y_gates)
+                break
+
+class Wall(Facility):
+    def __init__(self, x, y):
+        Facility.__init__(self,x, y, CHR_WALL)
+        fu,fd,su,sd,b = 1,1,1,1,1
+
+        for front_up in range(4):
+            self.occupy(x, y+fu)
+            fu+=1
+        for front_down in range(4):
+            self.occupy(x, y-2-fd)
+            fd+=1
+        for side_up in range(10):
+            self.occupy(x-su,y+4)
+            su+=1
+        for side_down in range(10):
+            self.occupy(x-sd,y-6)
+            sd+=1
+        for back in range(10):
+            self.occupy(x-10, y+4-b)
+            b+=1
+class Traffic_Light(Facility):
+    def __init__(self, x, y):
+        Facility.__init__(self,x, y, CHR_TRAFFIC_LIGHT_RED)
+
+    def work(self, character):
+        while True:
+            if ((self.distance(character) == (0,1) or self.distance(character) == (1,0)) or self.distance(character) == (1,1)):
+               self.image = CHR_TRAFFIC_LIGHT_GREEN
+               break
+            else:
+               self.image = CHR_TRAFFIC_LIGHT_RED
+               break
+
+
+class Fountains(Facility):
+    def __init__(self, x, y, hp=100):
+        Facility.__init__(self, x, y, CHR_FOUNTAIN)
+        self.hp = hp
 
     def heal(self, character):
-        if self.hp == 0:
-            print("I'm deeply sorry, but I'm empty :(")
-        else:
-            if character.hp == 0:
-                print("I see, you are dead...so sorry! But I can make you alive again!")
-                print("But with one condition! You have to promise me you will become an ascetic.")
-                print("I need your clothes and motocicle.")
-                character.items = []
-                character.hp = character.max_hp
-
-
-            else:
-                if (self.distance(character) == (0,1) or self.distance(character) == (1,0)):
-                    while True:
+        while True:
+            if (self.distance(character) == (0,1) or self.distance(character) == (1,0)) or self.distance(character) == (1,1):
+                if self.hp == 0:
+                    print("I'm deeply sorry, but I'm empty :(")
+                    break
+                else:
+                    if(character.hp < character.max_hp):
                         character.hp += 10
                         self.hp -= 10
-                else:
-                    return None
-
-
+                        break
+                    elif(character.hp == character.max_hp):
+                        print "You don't need medical aid, fraud!"
+                        break
+                    else:
+                        print("I see, you are dead...so sorry! But I can make you alive again!")
+                        print("But with one condition! You have to promise me you will become an ascetic.")
+                        print("If you agree, as a first step, you throw away all your items.")
+                        choice = raw_input("Are you agree?")
+                        if choice == "Yes":
+                            character.items = []
+                            character.hp = character.max_hp
+                            character.image = CHR_PLAYER
+                            break
+            else:
+                return None
+                break
 
 class Character(Entity):
     def __init__(self, x, y, image, damage, hp = 100):
@@ -186,7 +257,6 @@ class Character(Entity):
                 if not world.is_occupied(new_x, new_y):
                     self.move(goto)
                     break
-
 
     def hunt(self, character, directions, steps):
         while self.hp != 0:
@@ -247,9 +317,8 @@ class Character(Entity):
                     if enemy.image == CHR_DEAD:
                         statusbar.set_status("You make %i damage: your enemy is dead." % damage)
                     else:
-                        statusbar.set_status("You make %i damage: %s has %i/%i hp left." % \
+                        statusbar.set_status("You make %i damage: %s has %i/%i hp left." %
                             (damage, enemy.image, enemy.hp, enemy.max_hp))
-
 
     def condition(self):
         return (self.hp * 100) / self.max_hp
@@ -316,7 +385,7 @@ class Enemy(Character):
         choices = [1, 2]
         choice = random.choice(choices)
         #Enemy has poor eyes :(.
-        if self.distance_x(character) > 10 or self.distance_x(character) < -10 or self.distance_y(character) > 10 or self.distance_y(character) < -10:
+        if (self.distance_x(character) > 10 or self.distance_x(character) < -10 or self.distance_y(character) > 10 or self.distance_y(character) < -10) or character.hp == 0:
             self.haotic_move(directions)
         else:
             #If character is weak or enemy is strong, without panic.
@@ -337,8 +406,6 @@ class Enemy(Character):
                 else:
                     self.hunt(character, directions, 1)
 
-
-
 class Minor_Characters(Character):
         def __init__(self, x, y, image, demage):
             Character.__init__(self, x, y, image, demage)
@@ -346,13 +413,18 @@ class Minor_Characters(Character):
         def act(self, character, directions, steps):
             self.hunt(character, directions, steps)
 
+        def walk(self, directions):
+            self.haotic_move(directions)
+
+class Car(Minor_Characters):
+    def __init__(self, x, y, image ):
+        Minor_Characters.__init__(self, x, y, image, demage=0)
 
 
 class Wizard(Minor_Characters):
     def __init__(self, x, y, mana = 100):
         Minor_Characters.__init__(self, x, y, CHR_WIZARD, demage=2)
         self.mana = mana
-
 
     def cast_spell(self, name, target):
         """Cast a spell on the given target."""
@@ -365,12 +437,10 @@ class Wizard(Minor_Characters):
         enemy.harm(80)
         self.mana -= 97
 
-
     def _cast_hp_stealer(self, enemy):
         enemy.harm(3)
         self.hp += 3
         self.mana-=5
-
 
     def act_Wizard(self, character, directions):
         spells = {'remove' : 2, 'hp-stealer': 3}
@@ -381,7 +451,7 @@ class Wizard(Minor_Characters):
             return False
 
         if character.hp == 0:
-            self.haotic_move(directions)
+            self.walk(directions)
         elif(self.mana < costs[spell_to_use]):
             self.act(character, directions, 1)
         else:
@@ -389,8 +459,6 @@ class Wizard(Minor_Characters):
                 self.cast_spell(spell_to_use, character)
             else:
                 self.act(character, directions, steps)
-
-
 
 class Archer(Minor_Characters):
     def __init__(self, x, y):

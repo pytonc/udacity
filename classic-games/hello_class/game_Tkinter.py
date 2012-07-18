@@ -28,7 +28,8 @@ DIRECTIONS = {
 class mapGUI(Frame):  #based on Frame from Tkinter
     #--- VARIABLES ---
     mapCanvas = Canvas(rootTk, width=world.width*16, height=world.height*16) #Canvas for gfx map
-    tilesImg = []                            #List of images used in map
+    tilesImg = []
+                            #List of images used in map
 
     #--- CONSTRUCTOR ---
     def __init__(self):
@@ -50,10 +51,17 @@ class mapGUI(Frame):  #based on Frame from Tkinter
     def initImages(self):
         # map.png has 16x16 pixel tiles placed side-by-side. the following loop will take each of these tiles
         # and store them in the tilesImg list
-        for x in range(8):
-            imgTemp = Image.open("map.png")                     # open image
-            imgTemp = imgTemp.crop((x*16,0,x*16+16,16))         # crop it
-            self.tilesImg.append(ImageTk.PhotoImage(imgTemp))         # add to list, a format of image usable by canvas
+        steps = 14
+        map_to_use = "map.png"
+        for y in range(2):
+            for x in range(steps):
+                imgTemp = Image.open(map_to_use)
+                imgTemp = imgTemp.crop((x*16,0,x*16+16,16))
+                self.tilesImg.append(ImageTk.PhotoImage(imgTemp))
+
+            map_to_use = "map2.png"
+            steps = 2
+
 
     #--- PRINT STATUS TEXT ---
     def printText(self, inputText):
@@ -84,18 +92,43 @@ class mapGUI(Frame):  #based on Frame from Tkinter
                         self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[5], anchor = NW)
                     elif cell.image == 'F':
                         self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[7], anchor = NW)
+                    elif cell.image == 'T':
+                        self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[8], anchor = NW)
+                    elif cell.image == 'L':
+                        self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[9], anchor = NW)
+                    elif cell.image == 'G':
+                        self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[10], anchor = NW)
+                    elif cell.image == 'R':
+                        self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[11], anchor = NW)
+                    elif cell.image == 'GT':
+                        self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[12], anchor = NW)
+                    elif cell.image == 'WL':
+                        self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[13], anchor = NW)
+                    elif cell.image == 'TLR':
+                        self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[15], anchor = NW)
+                    elif cell.image == 'TLG':
+                        self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[14], anchor = NW)
                     else:   # for X, when bugs die
                         self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[6], anchor = NW)
 
                 except:
                     pass
 #Create objects
-student = Player(10, 10)
+student = Player(12, 12)
 engineer1 = Wizard(35, 13)
 engineer2 = Wizard(15,21)
 bug1 = Enemy(55,12)
 bug2 = Enemy(20, 15)
-fountains = Fountains((random.randint(1,world.width-1)), (random.randint(1,world.height-1)), (random.randint(1,10)))
+fountain = Fountains((world.width/8), (world.height/2))
+trees = Tree(random.randint(1,world.width-1), random.randint(1,world.height-1), 6)
+leafs = Leaf_Tree( random.randint(1,world.width-1), random.randint(1,world.height-1), 6)
+green_car = Car(random.randint(1,world.width-1), random.randint(1,world.height-1), 'G')
+red_car = Car(random.randint(1,world.width-1), random.randint(1,world.height-1), 'R')
+gates = Gate((world.width/6), (world.height/2))
+wall = Wall((world.width/6), (world.height/2 + 1))
+tr_light = Traffic_Light((world.width/6), (world.height/2)-1)
+
+
 
 statusbar.set_character(student)
 
@@ -103,12 +136,17 @@ statusbar.set_character(student)
 # COMMANDS
 #=============================================
 def move_enemies():
-    bug1.act(student, DIRECTIONS)
-    bug2.act(student, DIRECTIONS)
+    bug1.act(engineer1, DIRECTIONS)
+    bug2.act(engineer2, DIRECTIONS)
 
 def move_others():
+    gates.open_close(student)
     engineer1.act_Wizard(bug1, DIRECTIONS)
     engineer2.act_Wizard(bug2, DIRECTIONS)
+    fountain.heal(student)
+    green_car.walk(DIRECTIONS)
+    red_car.walk(DIRECTIONS)
+    tr_light.work(student)
 
 def move_student_left(event):
     student.move("left")
@@ -125,6 +163,7 @@ def move_student_right(event):
 def move_student_up(event):
     student.move("up")
     move_enemies()
+    move_others()
     mainMapGUI.paintMap(None)
 
 def move_student_down(event):
@@ -132,7 +171,6 @@ def move_student_down(event):
     move_enemies()
     move_others()
     mainMapGUI.paintMap(None)
-
 
 def attack(event):
     enemies = student.get_alive_enemies(1)
