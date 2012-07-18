@@ -15,7 +15,8 @@ CHR_GATE = "GT"
 CHR_WALL = "WL"
 CHR_TRAFFIC_LIGHT_RED = "TLR"
 CHR_TRAFFIC_LIGHT_GREEN = "TLG"
-#DIRECTIONS = {"r": "right", "l": "left", "d": "down", "u": "up"}
+CHR_BUTTERFLY = "BF"
+DIRECTIONS = ["right", "left", "down", "up"]
 
 
 class StatusBar(object):
@@ -157,6 +158,7 @@ class Wall(Facility):
         for back in range(10):
             self.occupy(x-10, y+4-b)
             b+=1
+
 class Traffic_Light(Facility):
     def __init__(self, x, y):
         Facility.__init__(self,x, y, CHR_TRAFFIC_LIGHT_RED)
@@ -169,7 +171,6 @@ class Traffic_Light(Facility):
             else:
                self.image = CHR_TRAFFIC_LIGHT_RED
                break
-
 
 class Fountains(Facility):
     def __init__(self, x, y, hp=100):
@@ -243,11 +244,24 @@ class Character(Entity):
         """
         new_x, new_y = self.new_pos(direction)
         if world.is_occupied(new_x, new_y):
-            statusbar.set_status('Position is occupied, try another move.')
+            temp_directions = DIRECTIONS
+            random.shuffle(temp_directions)
+            if (len(temp_directions) != 0):
+                for direction_to_go in temp_directions:
+                    if not world.is_occupied(self.new_pos(direction_to_go)[0], self.new_pos(direction_to_go)[1]):
+                        self.move(direction_to_go)
+                    else:
+                        temp_directions.remove(direction_to_go)
+            else:
+                self.stay
+
         else:
             self.remove()
             self.x, self.y = new_x, new_y
             self.occupy(self.x, self.y)
+
+    def stay(self):
+        self.move(None)
 
     def haotic_move(self, directions):
             while (True):
@@ -263,7 +277,6 @@ class Character(Entity):
             #While alive, enemy, if player is not close enough (if so, it attaks),
             #find where to go to find the player out. Enemy is looking for player until player is in the next cell.
             #Steps here for Wizard, Archer and others. They have their out range for attak
-
             if self.distance(character) == (0, 1) or self.distance(character) == (1, 0):
                 self.attack(character)
                 break
@@ -288,8 +301,6 @@ class Character(Entity):
         if self.hp == 0:
             print("Corpses can't attack, unless they are zombies. But you are not.")
         else:
-            #dist = self.distance(enemy)
-            #if dist == (0, 1) or dist == (1, 0):
             if not enemy.hp:
                 msgs = [
                 "  This body doesn't look delicious at all.",
@@ -407,8 +418,8 @@ class Enemy(Character):
                     self.hunt(character, directions, 1)
 
 class Minor_Characters(Character):
-        def __init__(self, x, y, image, demage):
-            Character.__init__(self, x, y, image, demage)
+        def __init__(self, x, y, image, damage):
+            Character.__init__(self, x, y, image, damage)
 
         def act(self, character, directions, steps):
             self.hunt(character, directions, steps)
@@ -416,14 +427,36 @@ class Minor_Characters(Character):
         def walk(self, directions):
             self.haotic_move(directions)
 
+class Butterfly(Minor_Characters):
+    def __init__(self, x, y, hp = 20):
+        Minor_Characters.__init__(self, x, y, CHR_BUTTERFLY, damage=1)
+        self.hp = hp
+
+    def fly(self, character, directions):
+        while True:
+            if self.distance_x(character) <=2 or self.distance_x(character) >= -2 or self.distance_y(character) <= 2 or self.distance_y(character) >=-2:
+                new_x = (self.x + random.randint(-3,3))  % world.width
+                new_y = (self.y + random.randint(-3,3))  % world.height
+                if world.is_occupied(new_x, new_y):
+                    self.move(random.choice(directions.keys()))
+                    break
+                else:
+                    self.remove()
+                    self.x, self.y = new_x, new_y
+                    self.occupy(self.x, self.y)
+                    break
+            else:
+                self.haotic_move(directions)
+
+
 class Car(Minor_Characters):
     def __init__(self, x, y, image ):
-        Minor_Characters.__init__(self, x, y, image, demage=0)
+        Minor_Characters.__init__(self, x, y, image, damage=0)
 
 
 class Wizard(Minor_Characters):
     def __init__(self, x, y, mana = 100):
-        Minor_Characters.__init__(self, x, y, CHR_WIZARD, demage=2)
+        Minor_Characters.__init__(self, x, y, CHR_WIZARD, damage=2)
         self.mana = mana
 
     def cast_spell(self, name, target):
@@ -462,7 +495,7 @@ class Wizard(Minor_Characters):
 
 class Archer(Minor_Characters):
     def __init__(self, x, y):
-        Minor_Characters.__init__(self, x, y, CHR_ARCHER, demage = 3)
+        Minor_Characters.__init__(self, x, y, CHR_ARCHER, damage = 3)
 
     def range_attack(self, enemy):
         dist = self.distance(enemy)
@@ -471,7 +504,7 @@ class Archer(Minor_Characters):
 
 class Monk(Minor_Characters):
     def __init__(self, x, y, mana=100):
-        Minor_Characters.__init__(self, x, y, CHR_ENEMY_MONK, demage = 0)
+        Minor_Characters.__init__(self, x, y, CHR_ENEMY_MONK, damage = 0)
         self.mana = mana
 
     def heal(self, friend):

@@ -1,3 +1,4 @@
+###!/usr/bin/env python
 """"
 [GFX functionality with Tkinter] by 58982/ken-price
 VERSION 2
@@ -60,7 +61,7 @@ class mapGUI(Frame):  #based on Frame from Tkinter
                 self.tilesImg.append(ImageTk.PhotoImage(imgTemp))
 
             map_to_use = "map2.png"
-            steps = 2
+            steps = 3
 
 
     #--- PRINT STATUS TEXT ---
@@ -108,6 +109,8 @@ class mapGUI(Frame):  #based on Frame from Tkinter
                         self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[15], anchor = NW)
                     elif cell.image == 'TLG':
                         self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[14], anchor = NW)
+                    elif cell.image == 'BF':
+                        self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[16], anchor = NW)
                     else:   # for X, when bugs die
                         self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[6], anchor = NW)
 
@@ -116,9 +119,10 @@ class mapGUI(Frame):  #based on Frame from Tkinter
 #Create objects
 student = Player(12, 12)
 engineer1 = Wizard(35, 13)
-engineer2 = Wizard(15,21)
+engineer2 = Wizard(56,21)
 bug1 = Enemy(55,12)
 bug2 = Enemy(20, 15)
+
 fountain = Fountains((world.width/8), (world.height/2))
 trees = Tree(random.randint(1,world.width-1), random.randint(1,world.height-1), 6)
 leafs = Leaf_Tree( random.randint(1,world.width-1), random.randint(1,world.height-1), 6)
@@ -127,6 +131,7 @@ red_car = Car(random.randint(1,world.width-1), random.randint(1,world.height-1),
 gates = Gate((world.width/6), (world.height/2))
 wall = Wall((world.width/6), (world.height/2 + 1))
 tr_light = Traffic_Light((world.width/6), (world.height/2)-1)
+butterfly = Butterfly(20,17)
 
 
 
@@ -147,6 +152,7 @@ def move_others():
     green_car.walk(DIRECTIONS)
     red_car.walk(DIRECTIONS)
     tr_light.work(student)
+    butterfly.fly(student, DIRECTIONS)
 
 def move_student_left(event):
     student.move("left")
