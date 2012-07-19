@@ -61,7 +61,7 @@ class mapGUI(Frame):  #based on Frame from Tkinter
                 self.tilesImg.append(ImageTk.PhotoImage(imgTemp))
 
             map_to_use = "map2.png"
-            steps = 3
+            steps = 4
 
 
     #--- PRINT STATUS TEXT ---
@@ -83,7 +83,7 @@ class mapGUI(Frame):  #based on Frame from Tkinter
                 try:
                     if cell is None:            #empty cell, blank image (index 0)
                         self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[0], anchor = NW)
-                    elif cell.image == 'S':   #
+                    elif cell.image == 'S':
                         self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[2], anchor = NW)
                     elif cell.image == 'W':
                         self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[3], anchor = NW)
@@ -97,11 +97,11 @@ class mapGUI(Frame):  #based on Frame from Tkinter
                         self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[8], anchor = NW)
                     elif cell.image == 'L':
                         self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[9], anchor = NW)
-                    elif cell.image == 'G':
+                    elif cell.image == 'GC':
                         self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[10], anchor = NW)
-                    elif cell.image == 'R':
+                    elif cell.image == 'RC':
                         self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[11], anchor = NW)
-                    elif cell.image == 'GT':
+                    elif cell.image == 'G':
                         self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[12], anchor = NW)
                     elif cell.image == 'WL':
                         self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[13], anchor = NW)
@@ -111,13 +111,15 @@ class mapGUI(Frame):  #based on Frame from Tkinter
                         self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[14], anchor = NW)
                     elif cell.image == 'BF':
                         self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[16], anchor = NW)
+                    elif cell.image == 'H':
+                        self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[17], anchor = NW)
                     else:   # for X, when bugs die
                         self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[6], anchor = NW)
-
                 except:
+
                     pass
 #Create objects
-student = Player(12, 12)
+student = Player(11, 12)
 engineer1 = Wizard(35, 13)
 engineer2 = Wizard(56,21)
 bug1 = Enemy(55,12)
@@ -127,13 +129,13 @@ fountain1 = Fountains((world.width/8)-4, (world.height/2)-2)
 fountain2 = Fountains((world.width/8)-3, (world.height/2)+2)
 trees = Tree(random.randint(1,world.width-1), random.randint(1,world.height-1), 6)
 leafs = Leaf_Tree( random.randint(1,world.width-1), random.randint(1,world.height-1), 6)
-green_car = Car(random.randint(1,world.width-1), random.randint(1,world.height-1), 'G')
-red_car = Car(random.randint(1,world.width-1), random.randint(1,world.height-1), 'R')
+green_car = Car(random.randint(1,world.width-1), random.randint(1,world.height-1), 'GC')
+red_car = Car(random.randint(1,world.width-1), random.randint(1,world.height-1), 'RC')
 gates = Gate((world.width/6), (world.height/2))
 wall = Wall((world.width/6), (world.height/2 + 1))
 tr_light = Traffic_Light((world.width/6), (world.height/2)-1)
 butterfly = Butterfly(20,17)
-
+house = House((world.width/8)-3, (world.height/2), student)
 
 
 statusbar.set_character(student)
@@ -155,19 +157,31 @@ def move_others():
     red_car.walk(DIRECTIONS)
     tr_light.work(student)
     butterfly.fly(student, DIRECTIONS)
+    house.own(student)
 
 def move_student(event):
     direction = event.keysym.lower()
-    student.move(direction)
+    student.move_player(direction, ('H', 'G'))
     move_enemies()
     move_others()
     mainMapGUI.paintMap(None)
 
 def student_sleep(event):
-    student.stay()
-    move_enemies()
-    move_others()
-    mainMapGUI.paintMap(None)
+    if (student.x == house.x and student.y == house.y):
+        hours = raw_input("How long would you like to sleep?")
+        for rest in range(int(hours)):
+            student.stay()
+            if student.hp == student.max_hp:
+                return None
+            else:
+                student.hp += 20
+            move_enemies()
+            move_others()
+            mainMapGUI.paintMap(None)
+    else:
+        tempStr= "You can't sleep outside, it's too cold! Go home!"
+        mainMapGUI.printText(tempStr)
+
 
 def attack(event):
     enemies = student.get_alive_enemies(1)
@@ -186,6 +200,7 @@ def gps(event):
 def hp_checker(event):
     tempStr = "You have " + str(student.hp) + " hp left"
     mainMapGUI.printText(tempStr)
+
 
 
 

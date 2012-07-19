@@ -2,20 +2,23 @@
 # game.py - simple game to demonstrate classes and objects
 import random
 
-CHR_PLAYER = "S"
-CHR_ENEMY = "B"
-CHR_WIZARD = "W"
-CHR_ARCHER = "A"
-CHR_DEAD = "X"
-CHR_FOUNTAIN = "F"
-CHR_MONK = "M"
-CHR_TREE = "T"
-CHR_LEAF = "L"
-CHR_GATE = "GT"
-CHR_WALL = "WL"
-CHR_TRAFFIC_LIGHT_RED = "TLR"
-CHR_TRAFFIC_LIGHT_GREEN = "TLG"
-CHR_BUTTERFLY = "BF"
+CHR = {
+'CHR_PLAYER'              : "S"     ,
+'CHR_ENEMY'               : "B"     ,
+'CHR_WIZARD'              : "W"     ,
+'CHR_ARCHER'              : "A"     ,
+'CHR_DEAD'                : "X"     ,
+'CHR_FOUNTAIN'            : "F"     ,
+'CHR_MONK'                : "M"     ,
+'CHR_TREE'                : "T"     ,
+'CHR_LEAF'                : "L"     ,
+'CHR_GATE'                : "G"    ,
+'CHR_WALL'                : "WL"    ,
+'CHR_TRAFFIC_LIGHT_RED'   : "TLR"   ,
+'CHR_TRAFFIC_LIGHT_GREEN' : "TLG"   ,
+'CHR_BUTTERFLY'           : "BF"    ,
+'CHR_HOUSE'               : "H"
+}
 DIRECTIONS = ["right", "left", "down", "up"]
 
 
@@ -64,19 +67,6 @@ class WorldMap(object):
         ''' Checks if a given space on the map and returns True if occupied. '''
         return self.map[x][y] is not None
 
-    def print_map(self):
-        print '+' * (self.width + 2)
-        for y in range(self.height - 1, 0, -1):
-            line = '+'
-            for x in range(self.width):
-                cell = self.map[x][y]
-                if cell is None:
-                    line += ' '
-                else:
-                    line += cell.image
-            print line + '+'
-        print '+' * (self.width + 2)
-
 world = WorldMap(60, 22)
 
 #world = [[None for x in range(100)] for y in range(100)]
@@ -103,6 +93,22 @@ class Entity:
     def distance_y(self, other):
         return (other.y - self.y)
 
+    def who_is(self, x, y):
+        result =[]
+        cell = world.map[x][y]
+        try:
+            for chrs in CHR:
+                if CHR[chrs] == cell.image:
+                    return CHR[chrs]
+        except AttributeError:
+            return None
+
+    def temp_list(self, l):
+        tempList = []
+        for e in l:
+            tempList.append(e)
+        return tempList
+
 class Environment(Entity):
     def __init__(self, x, y, amount, image):
         Entity.__init__(self, x, y, image)
@@ -111,35 +117,39 @@ class Environment(Entity):
 
 class Tree(Environment):
     def __init__(self, x, y, amount):
-        Environment.__init__(self, x, y, amount, CHR_TREE)
+        Environment.__init__(self, x, y, amount, CHR['CHR_TREE'])
 
 class Leaf_Tree(Environment):
     def __init__(self, x, y, amount):
-        Environment.__init__(self, x, y, amount, CHR_LEAF)
+        Environment.__init__(self, x, y, amount, CHR['CHR_LEAF'])
 
 class Facility(Entity):
     def __init__(self, x, y, image):
         Entity.__init__(self, x, y, image)
         self.occupy(x, y)
 
+class House(Facility):
+    def __init__(self, x, y, character):
+        Facility.__init__(self, x, y, CHR['CHR_HOUSE'])
+
+    def own(self, character):
+        x_house = self.x
+        y_house = self.y
+        self.occupy(x_house, y_house)
+
 class Gate(Facility):
     def __init__(self, x, y):
-        Facility.__init__(self, x, y, CHR_GATE)
+        Facility.__init__(self, x, y, CHR['CHR_GATE'])
 
     def open_close(self, character):
         x_gates = self.x
         y_gates = self.y
-        while True:
-            if ((self.distance(character) == (0,1) or self.distance(character) == (1,0)) or self.distance(character) == (1,1)):
-                self.remove()
-                break
-            else:
-                self.occupy(x_gates, y_gates)
-                break
+        self.occupy(x_gates, y_gates)
+
 
 class Wall(Facility):
     def __init__(self, x, y):
-        Facility.__init__(self,x, y, CHR_WALL)
+        Facility.__init__(self,x, y, CHR['CHR_WALL'])
         fu,fd,su,sd,b = 1,1,1,1,1
 
         for front_up in range(4):
@@ -160,20 +170,20 @@ class Wall(Facility):
 
 class Traffic_Light(Facility):
     def __init__(self, x, y):
-        Facility.__init__(self,x, y, CHR_TRAFFIC_LIGHT_RED)
+        Facility.__init__(self, x, y, CHR['CHR_TRAFFIC_LIGHT_RED'])
 
     def work(self, character):
         while True:
             if ((self.distance(character) == (0,1) or self.distance(character) == (1,0)) or self.distance(character) == (1,1)):
-               self.image = CHR_TRAFFIC_LIGHT_GREEN
+               self.image = CHR['CHR_TRAFFIC_LIGHT_GREEN']
                break
             else:
-               self.image = CHR_TRAFFIC_LIGHT_RED
+               self.image = CHR['CHR_TRAFFIC_LIGHT_RED']
                break
 
 class Fountains(Facility):
     def __init__(self, x, y, hp=100):
-        Facility.__init__(self, x, y, CHR_FOUNTAIN)
+        Facility.__init__(self, x, y, CHR['CHR_FOUNTAIN'])
         self.hp = hp
 
     def heal(self, character):
@@ -198,7 +208,7 @@ class Fountains(Facility):
                         if choice == "Yes":
                             character.items = []
                             character.hp = character.max_hp
-                            character.image = CHR_PLAYER
+                            character.image = CHR['CHR_PLAYER']
                         break
             else:
                 return None
@@ -242,9 +252,10 @@ class Character(Entity):
             Moves the character to the new position.
         """
         new_x, new_y = self.new_pos(direction)
-        if world.is_occupied(new_x, new_y):
-            temp_directions = DIRECTIONS
-            random.shuffle(temp_directions)
+        temp_directions = self.temp_list(DIRECTIONS)
+        random.shuffle(temp_directions)
+
+        if (world.is_occupied(new_x, new_y)):
             if (len(temp_directions) != 0):
                 for direction_to_go in temp_directions:
                     if not world.is_occupied(self.new_pos(direction_to_go)[0], self.new_pos(direction_to_go)[1]):
@@ -252,12 +263,21 @@ class Character(Entity):
                     else:
                         temp_directions.remove(direction_to_go)
             else:
-                self.stay
+                self.stay()
 
         else:
             self.remove()
             self.x, self.y = new_x, new_y
             self.occupy(self.x, self.y)
+
+    def move_player(self, direction, exception):
+        new_x, new_y = self.new_pos(direction)
+        if (exception[0] == self.who_is(new_x, new_y) or exception[1] == self.who_is(new_x, new_y)):
+            self.remove()
+            self.x, self.y = new_x, new_y
+            self.occupy(self.x, self.y)
+        else:
+            self.move(direction)
 
     def stay(self):
         self.move(None)
@@ -292,7 +312,7 @@ class Character(Entity):
                 self.move(directions['d'])
                 break
             else:
-                self.move(None)
+                self.stay()
                 break
 
     def attack(self, enemy):
@@ -321,10 +341,10 @@ class Character(Entity):
                         (damage+1, self.damage)[damage == self.damage])
                 enemy.harm(damage)
 
-                if enemy.image == CHR_PLAYER:
+                if enemy.image == CHR['CHR_PLAYER']:
                     statusbar.set_status("You are being attacked: %i damage." % damage)
-                elif self.image == CHR_PLAYER:
-                    if enemy.image == CHR_DEAD:
+                elif self.image == CHR['CHR_PLAYER']:
+                    if enemy.image == CHR['CHR_DEAD']:
                         statusbar.set_status("You make %i damage: your enemy is dead." % damage)
                     else:
                         statusbar.set_status("You make %i damage: %s has %i/%i hp left." %
@@ -336,7 +356,7 @@ class Character(Entity):
     def harm(self, damage):
         self.hp -= damage
         if self.hp <= 0:
-            self.image = CHR_DEAD
+            self.image = CHR['CHR_DEAD']
             self.hp = 0
 
     def get_all_enemies_at_distance(self, dist):
@@ -378,11 +398,11 @@ class Character(Entity):
 
 class Player(Character):
     def __init__(self, x, y):
-        Character.__init__(self, x, y, CHR_PLAYER, damage = 10)
+        Character.__init__(self, x, y, CHR['CHR_PLAYER'], damage = 10)
 
 class Enemy(Character):
     def __init__(self, x, y):
-        Character.__init__(self, x, y, CHR_ENEMY, damage = 10)
+        Character.__init__(self, x, y, CHR['CHR_ENEMY'], damage = 10)
 
     def challenge(self, other):
         print "Let's fight!"
@@ -428,7 +448,7 @@ class Minor_Characters(Character):
 
 class Butterfly(Minor_Characters):
     def __init__(self, x, y, hp = 20):
-        Minor_Characters.__init__(self, x, y, CHR_BUTTERFLY, damage=1)
+        Minor_Characters.__init__(self, x, y, CHR['CHR_BUTTERFLY'], damage=1)
         self.hp = hp
 
     def fly(self, character, directions):
@@ -455,7 +475,7 @@ class Car(Minor_Characters):
 
 class Wizard(Minor_Characters):
     def __init__(self, x, y, mana = 100):
-        Minor_Characters.__init__(self, x, y, CHR_WIZARD, damage=2)
+        Minor_Characters.__init__(self, x, y, CHR['CHR_WIZARD'], damage=2)
         self.mana = mana
 
     def cast_spell(self, name, target):
@@ -494,7 +514,7 @@ class Wizard(Minor_Characters):
 
 class Archer(Minor_Characters):
     def __init__(self, x, y):
-        Minor_Characters.__init__(self, x, y, CHR_ARCHER, damage = 3)
+        Minor_Characters.__init__(self, x, y, CHR['CHR_ARCHER'], damage = 3)
 
     def range_attack(self, enemy):
         dist = self.distance(enemy)
@@ -503,11 +523,12 @@ class Archer(Minor_Characters):
 
 class Monk(Minor_Characters):
     def __init__(self, x, y, mana=100):
-        Minor_Characters.__init__(self, x, y, CHR_ENEMY_MONK, damage = 0)
+        Minor_Characters.__init__(self, x, y, CHR['CHR_ENEMY_MONK'], damage = 0)
         self.mana = mana
 
     def heal(self, friend):
         self.hp -= 2
         friend.hp +=5
         self.mana -=5
+
 
