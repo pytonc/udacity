@@ -77,7 +77,6 @@ class WorldMap(object):
             print line + '+'
         print '+' * (self.width + 2)
 
-
 world = WorldMap(60, 22)
 
 #world = [[None for x in range(100)] for y in range(100)]
@@ -188,10 +187,10 @@ class Fountains(Facility):
                         character.hp += 10
                         self.hp -= 10
                         break
-                    elif(character.hp == character.max_hp):
+                    elif(character.hp >= character.max_hp):
                         print "You don't need medical aid, fraud!"
                         break
-                    else:
+                    elif(character.hp == 0):
                         print("I see, you are dead...so sorry! But I can make you alive again!")
                         print("But with one condition! You have to promise me you will become an ascetic.")
                         print("If you agree, as a first step, you throw away all your items.")
@@ -200,7 +199,7 @@ class Fountains(Facility):
                             character.items = []
                             character.hp = character.max_hp
                             character.image = CHR_PLAYER
-                            break
+                        break
             else:
                 return None
                 break
@@ -277,7 +276,7 @@ class Character(Entity):
             #While alive, enemy, if player is not close enough (if so, it attaks),
             #find where to go to find the player out. Enemy is looking for player until player is in the next cell.
             #Steps here for Wizard, Archer and others. They have their out range for attak
-            if self.distance(character) == (0, 1) or self.distance(character) == (1, 0):
+            if self.distance(character) == (0, 1) or self.distance(character) == (1, 0) or self.distance(character) == (1, 1):
                 self.attack(character)
                 break
             elif (self.distance_x(character) >  steps):

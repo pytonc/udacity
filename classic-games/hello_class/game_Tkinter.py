@@ -123,7 +123,8 @@ engineer2 = Wizard(56,21)
 bug1 = Enemy(55,12)
 bug2 = Enemy(20, 15)
 
-fountain = Fountains((world.width/8), (world.height/2))
+fountain1 = Fountains((world.width/8)-4, (world.height/2)-2)
+fountain2 = Fountains((world.width/8)-3, (world.height/2)+2)
 trees = Tree(random.randint(1,world.width-1), random.randint(1,world.height-1), 6)
 leafs = Leaf_Tree( random.randint(1,world.width-1), random.randint(1,world.height-1), 6)
 green_car = Car(random.randint(1,world.width-1), random.randint(1,world.height-1), 'G')
@@ -141,14 +142,15 @@ statusbar.set_character(student)
 # COMMANDS
 #=============================================
 def move_enemies():
-    bug1.act(engineer1, DIRECTIONS)
+    bug1.act(student, DIRECTIONS)
     bug2.act(engineer2, DIRECTIONS)
 
 def move_others():
     gates.open_close(student)
-    engineer1.act_Wizard(bug1, DIRECTIONS)
+    engineer1.act_Wizard(bug2, DIRECTIONS)
     engineer2.act_Wizard(bug2, DIRECTIONS)
-    fountain.heal(student)
+    fountain1.heal(student)
+    fountain2.heal(student)
     green_car.walk(DIRECTIONS)
     red_car.walk(DIRECTIONS)
     tr_light.work(student)
@@ -178,12 +180,20 @@ def move_student_down(event):
     move_others()
     mainMapGUI.paintMap(None)
 
+def student_sleep(event):
+    student.stay()
+    move_enemies()
+    move_others()
+    mainMapGUI.paintMap(None)
+
 def attack(event):
     enemies = student.get_alive_enemies(1)
     if enemies:
         student.attack(enemies[0])
         enemies[0].act(student, DIRECTIONS)
-    tempStr = "Bug now has: " + str(bug1.hp) + " hp left"
+    else:
+        tempStr = "There is no any enemy around."
+    tempStr = "Bug1 now has: " + str(bug1.hp) + " hp left" + "  and Bug2 now has: " + str(bug2.hp) + " hp left"
     mainMapGUI.printText(tempStr)
 
 def gps(event):
@@ -193,6 +203,8 @@ def gps(event):
 def hp_checker(event):
     tempStr = "You have " + str(student.hp) + " hp left"
     mainMapGUI.printText(tempStr)
+
+
 
 
 #=============================================
@@ -216,6 +228,7 @@ if __name__ == '__main__':
     rootTk.bind('a', attack)
     rootTk.bind('g', gps)
     rootTk.bind('h', hp_checker)
+    rootTk.bind('s', student_sleep)
 
     mainMapGUI.paintMap(None)
     rootTk.mainloop()
