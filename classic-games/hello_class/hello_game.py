@@ -18,6 +18,8 @@ class HelloGame(object):
         map_width = config.getint("WordMap", "width")
         map_height = config.getint("WordMap", "height")
 
+        self.avail_levels = config.get("Levels", "available_levels")
+
         # Initialize game Frontend
         if frontend == "sdl":
             print "Initializing PyGame / SDL frontend"
@@ -39,25 +41,79 @@ class HelloGame(object):
         if savefile is not None:
             self.savefile = savefile
 
-    def start_game(self, level):
-        student_data = self.config.get(level, 'student').split(',')
-        self.ui.add_student(student_data)
-        self.level = level
+    # This loop controls the level progression
+    def start_game(self):
+        next_level = 1
+        while True:
+            self.start_level(next_level)
+            next_level = self.get_next_level()
 
-        engineer_data = self.config.get(level, 'engineer').split(',')
+            if self.is_game_over():
+                print "Game is OVER!"
+                self.game_over(False)
+            if next_level < 0:
+                print "No more levels!"
+                self.game_over(True)
+
+            print "Loading level " + str(next_level)
+            # Reset the UI "entities" before loading the next level
+            self.ui.notify_level_finished()
+            self.ui.reset()
+
+    def start_level(self, level=1):
+        level_label = "Level" + str(level)
+
+        student_data = self.config.get(level_label, 'student').split(',')
+        self.ui.add_student(student_data)
+        self.curr_level = level
+
+        engineer_data = self.config.get(level_label, 'engineer').split(',')
         self.ui.add_engineer(engineer_data)
 
-        bugs_data = self.config.get(level, 'bug').split(';')
+        bugs_data = self.config.get(level_label, 'bug').split(';')
         for el in bugs_data:
             self.ui.add_enemy(el.split(','))
 
         self.ui.set_statusbar_character(self.ui.get_student())
+        self.ui.set_status("Started level " + str(self.curr_level))
 
         self.ui.draw_window()
         self.ui.mainloop()
 
-    def game_over():
-        sys.exit(1)
+    def is_game_over(self):
+        student = self.ui.get_student()
+        if student.hp <= 0:
+            print "You died!!"
+            return True
+        else:
+            return False
+
+    def is_level_finished(self):
+        enemies = self.ui.get_enemies()
+        for enemy in enemies:
+            if enemy.hp > 0:
+                return False
+        return True
+
+    def get_next_level(self):
+        next_level = self.curr_level + 1
+        level_label = "Level" + str(next_level)
+
+        if level_label in self.avail_levels:
+            return next_level
+        else:
+            return -1
+
+    def game_over(self, victory):
+        if victory == True:
+            self.ui.notify_level_finished()
+        else:
+            self.ui.notify_game_over()
+        self.quit_game()
+
+    def quit_game(self):
+        print "Exiting the game !"
+        sys.exit(0)
 
     def save_game(self):
         outfile = open(self.savefile, "wb")

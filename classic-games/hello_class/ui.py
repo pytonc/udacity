@@ -31,6 +31,30 @@ class UserInterface(object):
     def set_statusbar_character(self, character):
         self.statusbar.set_character(character)
 
+    def get_student(self):
+        return self.student
+
+    def get_enemies(self):
+        return self.bugs
+
+    def reset(self):       
+        self.world_map.reset()
+        self.bugs = []
+        self.engineer = None
+        self.student = None
+
+    # This function must be called at every loop iteration
+    # It'll check for level completed / game over conditions
+    def exit_loop(self):
+        if self.game_handler.is_game_over() == True or self.game_handler.is_level_finished() == True:
+            return True
+        return False
+
+    def notify_level_finished(self):
+        pass
+
+    def notify_game_over(self):
+        pass
 
 class StatusBar(object):
     def __init__(self, character=None):

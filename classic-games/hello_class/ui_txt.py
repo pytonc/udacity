@@ -67,7 +67,7 @@ class TXTUserInterface(UserInterface):
             c = raw_input("You > ")
 
             if c == "x":
-                break
+                self.game_handler.quit_game()
             elif c in UserInterface.DIRECTIONS:
                 self.student.move(UserInterface.DIRECTIONS[c])
                 for bug in self.bugs:
@@ -88,6 +88,10 @@ class TXTUserInterface(UserInterface):
                 self.set_status("Unknown command. 'x' to exit game")
 
             self.draw_window()
+
+            if self.exit_loop() == True:
+                print "Exiting the loop"
+                break
 
 
 # Canvas / Layout classes

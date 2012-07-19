@@ -15,6 +15,12 @@ class WorldMap(object):
         returns True if occupied. '''
         return self.map[x][y] is not None
 
+    def reset(self):
+        print "Resetting map"
+        for y in range(self.height):
+            for x in range(self.width):
+                self.map[x][y] = None
+
 
 class Entity(object):
     def __init__(self, world_map, x, y):
