@@ -193,7 +193,7 @@ class Fountains(Facility):
                     print("I'm deeply sorry, but I'm empty :(")
                     break
                 else:
-                    if(character.hp < character.max_hp):
+                    if(character.hp < character.max_hp and character.hp != 0):
                         character.hp += 10
                         self.hp -= 10
                         break
