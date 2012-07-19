@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-def format_items(items):
-    l = []
-    for item in items:
-        l.append("%s: %s" % (items.index(item), item.name))
-    return ', '.join(l)
+# returns number of possible columns given, box-width, item(col)-width and padding
+def get_cols(box_w, padding, item_w):
+    return (box_w - padding)/(padding + item_w)

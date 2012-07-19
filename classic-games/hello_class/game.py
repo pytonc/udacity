@@ -1,84 +1,97 @@
 #!/usr/bin/env python
 # game.py - simple game to demonstrate classes and objects
+import pygame
+from pygame.locals import *
+
+import sys
+
 from classes import *
-        
-DIRECTIONS = {
-    "r": "right",
-    "l": "left",
-    "d": "down",
-    "u": "up"
-}
 
 if __name__ == '__main__':
 
-    print """Welcome to 'Hello, Class' game
-    Available commands are:
-    r - move right
-    l - move left
-    u - move up
-    d - move down
-    a - attack
-    i - show list of items
-    p ([n]) - pick something up or pick an item [n] from a chest
-    drop [n] - put an item [n] in a chest or drop it
-    draw [n] - draw weapon with position [n] in inventory
-    gps - print location
-    x - exit
-    
-    There is a Bug 2 steps to the right from you.
-    In the chest to your left might be something that helps.
-    You should probably do something about it!
-    """
-
     # initializing some entities
-
-    #campus = World(100, 100)
     student = Player(10, 10, 100)
-    engineer = Wizard(35, 14, 100)
-    bug1 = Enemy(12, 10, 100)
-    chest = Chest(7, 9, [Weapon('Knife', 2)])
-    screw = Item('Screw', 20, 6)
+    engineer = Wizard(25, 14, 100)
+    enemies = [
+        Enemy(12, 10, 100),
+        Enemy(10, 12, 100)
+     ]
+    Chest(7, 9, [
+        Sword('Sword', 5),
+        Potion(),
+        Item('Spoon')
+    ])
+    Sword('Knife', 2, x = 8, y = 10)
+    Item('Screw', 20, 6)
+
+    student.items = [
+        Potion()
+    ]
     
-    statusbar.set_character(student)
-    world.print_map()
-
+    inventory = MyInventory(student)
+    statustext.set_character(student)
+    help = Help()
+    
     while True:
-        c = raw_input("You > ")
+        screen.fill((255,255,255))
+        screen.blit(background, (0, 0 + STATUS_HEIGHT))
+    
+        # gets all entities that are set on world map
+        entities = [entity for row in world.map for entity in row if entity]
         
-        if c == "x":
-            break
-            # u, d, l, r
-        elif c in DIRECTIONS:
-            student.move(DIRECTIONS[c])
-            bug1.act(student, DIRECTIONS)
-        elif c == "a":
-            student.attack(bug1)
-            bug1.act(student, DIRECTIONS)
-        elif c == "gps":
-            statusbar.set_status("Your GPS location: %i %i" % (student.x, student.y))
-            statusbar.set_status("Bug GPS location: %i %i" % (bug1.x, bug1.y))
-        elif c == "i":
-            student.show_items()
-        elif c == "o":
-            student.open()
-        elif c.startswith("p"):
-            l = c.split()
-            if len(l) == 2 and l[-1].isdigit():
-                student.pick(int(l[-1]))
-            else:
-                student.pick()
-        elif c.startswith("drop"):
-            l = c.split()
-            if len(l) == 2 and l[-1].isdigit():
-                student.drop(int(l[-1]))
-        elif c.startswith("draw"):
-            l = c.split()
-            if len(l) == 2 and l[-1].isdigit():
-                student.draw_weapon(int(l[-1]))
-        else:
-            statusbar.set_status("Unknown command. 'x' to exit game")
+        for e in entities:
+            if e.sprite:
+                screen.blit(e.sprite, (e.x * DIST, e.y * DIST + STATUS_HEIGHT))
+        
+        statustext.draw()
+        inventory.draw()
+        chest_inventory.draw()
+        help.draw()
             
-        statusbar.show()
-        world.print_map()
-
-
+        for event in pygame.event.get():
+            # QUIT
+            if event.type == QUIT:
+                sys.exit(0)
+                
+            elif event.type == KEYDOWN:
+                # move
+                if event.key in (K_LEFT, K_RIGHT, K_UP, K_DOWN):
+                    student.move(DIRECTIONS[event.key])
+                    for enemy in enemies:
+                        enemy.act(student)
+                # attack
+                elif event.key == K_a:
+                    student.attack()
+                    for enemy in enemies:
+                        enemy.act(student)
+                # show help
+                elif event.key == K_h:
+                    help.show(not help.visible)
+                # show items
+                elif event.key == K_i:
+                    inventory.show(not inventory.visible)
+                # open chest
+                elif event.key == K_o:
+                    student.open()
+                    inventory.show(chest_inventory.visible)
+                # pick item
+                elif event.key == K_p:
+                        student.pick()
+                # QUIT
+                elif event.key == K_ESCAPE:
+                    sys.exit(0)
+                    
+            elif event.type == MOUSEBUTTONDOWN:
+                # right mouse click
+                if event.button == 3:
+                    # item menus
+                    if inventory.visible:
+                        inventory.show_menu(event.pos)
+                    # pciking item
+                    if chest_inventory.visible:
+                        student.pick(chest_inventory, event.pos)
+                # left mouse click
+                elif event.button == 1:
+                    inventory.select_item(event.pos)
+                
+        pygame.display.update()
