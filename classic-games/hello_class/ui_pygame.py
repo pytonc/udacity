@@ -180,6 +180,7 @@ class SDLUserInterface(UserInterface):
 
     def set_status(self, msg):
         self.bottombar.set_message(msg)
+        self.draw_window()
 
     def get_student(self):
         return self.student
@@ -221,6 +222,7 @@ class SDLUserInterface(UserInterface):
                             self.student.attack(bug)
                             bug.act(self.student,
                                     SDLUserInterface.DIRECTIONS)
+                        self.draw_window()
 
             if self.exit_loop() == True:
                 print "Exiting the loop"
@@ -231,14 +233,12 @@ class SDLUserInterface(UserInterface):
         print "Yay!"
         self.level_completed_sound.play()
         self.set_status("Level Completed!")
-        self.draw_window()
         pygame.time.delay(3 * 1000)
 
     def notify_game_over(self):
         print "Doh!"
         self.game_over_sound.play()
         self.set_status("GAME OVER!")
-        self.draw_window()
         pygame.time.delay(3 * 1000)
         
 ##
