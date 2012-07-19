@@ -74,7 +74,7 @@ class mapGUI(Frame):  #based on Frame from Tkinter
     def paintMap(self, event):  #based on object "world" - world map that contains map objects, defined in classes.py
         self.mapCanvas.delete(ALL)  #delete previous objects
         #instruction text
-        self.mapCanvas.create_text(10, world.height*16+30, anchor=W, font="Arial", text="Moving: [u] [d] [l] [r] <Up> <Down> <Left> <Right>  |  Attack: [a]  |  GPS: [g]  |  HP: [h]")
+        self.mapCanvas.create_text(10, world.height*16+30, anchor=W, font="Arial", text="Moving: <Up> <Down> <Left> <Right>  |  Attack: [a]  |  GPS: [g]  |  HP: [h]")
 
         for x in range(0, world.width):
             for y in range(0, world.height):    #loop through each cell
@@ -156,26 +156,9 @@ def move_others():
     tr_light.work(student)
     butterfly.fly(student, DIRECTIONS)
 
-def move_student_left(event):
-    student.move("left")
-    move_enemies()
-    move_others()
-    mainMapGUI.paintMap(None)
-
-def move_student_right(event):
-    student.move("right")
-    move_enemies()
-    move_others()
-    mainMapGUI.paintMap(None)
-
-def move_student_up(event):
-    student.move("up")
-    move_enemies()
-    move_others()
-    mainMapGUI.paintMap(None)
-
-def move_student_down(event):
-    student.move("down")
+def move_student(event):
+    direction = event.keysym.lower()
+    student.move(direction)
     move_enemies()
     move_others()
     mainMapGUI.paintMap(None)
@@ -206,7 +189,6 @@ def hp_checker(event):
 
 
 
-
 #=============================================
 # MAIN PROGRAM
 #=============================================
@@ -217,14 +199,11 @@ if __name__ == '__main__':
     mainMapGUI = mapGUI()                           #Create instance of GUI map class
 
     ### KEY BIND ###
-    rootTk.bind('l', move_student_left)             # Moving Left
-    rootTk.bind('<Left>', move_student_left)
-    rootTk.bind('r', move_student_right)             # Moving Right
-    rootTk.bind('<Right>', move_student_right)
-    rootTk.bind('u', move_student_up)               # up
-    rootTk.bind('<Up>', move_student_up)
-    rootTk.bind('d', move_student_down)             # down
-    rootTk.bind('<Down>', move_student_down)
+
+    rootTk.bind('<Left>', move_student)
+    rootTk.bind('<Right>', move_student)
+    rootTk.bind('<Up>', move_student)
+    rootTk.bind('<Down>', move_student)
     rootTk.bind('a', attack)
     rootTk.bind('g', gps)
     rootTk.bind('h', hp_checker)

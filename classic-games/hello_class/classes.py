@@ -487,7 +487,7 @@ class Wizard(Minor_Characters):
         elif(self.mana < costs[spell_to_use]):
             self.act(character, directions, 1)
         else:
-            if self.distance(character) == (0, steps) or self.distance(character) == (steps, 0):
+            if self.distance(character) == (0, steps) or self.distance(character) == (steps, 0) or self.distance(character) == (steps, steps):
                 self.cast_spell(spell_to_use, character)
             else:
                 self.act(character, directions, steps)
@@ -510,5 +510,4 @@ class Monk(Minor_Characters):
         self.hp -= 2
         friend.hp +=5
         self.mana -=5
-
 
