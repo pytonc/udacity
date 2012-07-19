@@ -44,9 +44,20 @@ class SDLUserInterface(UserInterface):
     # Labels (Do we want them?)
     CHR_TXT_PLAYER = "S"
     CHR_TXT_ENEMY = "B"
+    CHR_TXT_ENEMY_DEAD = "X"
     CHR_TXT_WIZARD = "W"
     CHR_TXT_ARCHER = "A"
     CHR_TXT_DEAD = "D"
+
+    # Sounds
+    SND_DIR="assets"
+    SUCCESS="victory.mp3"
+    FAIL="bomb.mp3"
+
+    FREQ = 48000   # same as audio CD
+    BITSIZE = -16  # unsigned 16 bit
+    CHANNELS = 2   # 1 == mono, 2 == stereo
+    BUFFER = 1024  # audio buffer size in no. of samples
 
     # Sizes
     STATUSBAR_HEIGHT = 30
@@ -110,6 +121,19 @@ class SDLUserInterface(UserInterface):
         # Initialize PyGame
         pygame.init()
         pygame.display.set_caption('Hello Game')
+
+        # Set up the sounds
+        pygame.mixer.init(SDLUserInterface.FREQ,
+                        SDLUserInterface.BITSIZE,
+                        SDLUserInterface.CHANNELS,
+                        SDLUserInterface.BUFFER)
+        self.level_completed_sound = pygame.mixer.Sound(os.path.join(SDLUserInterface.SND_DIR,
+                                        SDLUserInterface.SUCCESS))
+        self.level_completed_sound.set_volume(0.5)
+        self.game_over_sound = pygame.mixer.Sound(os.path.join(SDLUserInterface.SND_DIR,
+                                        SDLUserInterface.FAIL))
+        self.game_over_sound.set_volume(0.5)
+
         self.clock = pygame.time.Clock()
 
         # We don't want to use the mouse (... yet)
@@ -132,6 +156,7 @@ class SDLUserInterface(UserInterface):
         self.topbar = SDLTopBar(basicFont,
                         self.windowSurface,
                         self.world_map,
+                        bar_width = window_width,
                         pos_x=topbar_x,
                         pos_y=topbar_y)
 
@@ -139,6 +164,7 @@ class SDLUserInterface(UserInterface):
         self.bottombar = SDLBottomBar(basicFont,
                             self.windowSurface,
                             self.world_map,
+                            bar_width = window_width,
                             pos_x=bottombar_x,
                             pos_y=bottombar_y)
 
@@ -176,16 +202,12 @@ class SDLUserInterface(UserInterface):
         bug.show()
         self.world_map.add_character(bug)
 
-    def exit_loop(self):
-        pygame.quit()
-        sys.exit(0)
-
     def mainloop(self):
         while True:
             tickFPS = self.clock.tick(SDLUserInterface.FRAME_RATE)
             for event in pygame.event.get():
                 if event.type == QUIT:
-                    self.exit_loop()
+                    self.game_handler.quit_game()
                 elif event.type == KEYDOWN:
                     if event.key in (K_LEFT, K_RIGHT, K_UP, K_DOWN):
                         self.student.move(SDLUserInterface.DIRECTIONS[event.key])
@@ -193,41 +215,63 @@ class SDLUserInterface(UserInterface):
                             bug.act(self.student,
                                     SDLUserInterface.DIRECTIONS)
                     elif event.key == K_x:
-                            self.exit_loop()
+                        self.game_handler.quit_game()
                     elif event.key == K_a:
                         for bug in self.bugs:
                             self.student.attack(bug)
                             bug.act(self.student,
                                     SDLUserInterface.DIRECTIONS)
 
+            if self.exit_loop() == True:
+                print "Exiting the loop"
+                break
 
+
+    def notify_level_finished(self):
+        print "Yay!"
+        self.level_completed_sound.play()
+        self.set_status("Level Completed!")
+        self.draw_window()
+        pygame.time.delay(3 * 1000)
+
+    def notify_game_over(self):
+        print "Doh!"
+        self.game_over_sound.play()
+        self.set_status("GAME OVER!")
+        self.draw_window()
+        pygame.time.delay(3 * 1000)
+        
 ##
 # Canvas / Layout classes
 ##
 class SDLStatusBar(StatusBar):
     def __init__(self, basicFont, windowSurface, world_map,
-            pos_x=0, pos_y=0,
+            bar_width, pos_x=0, pos_y=0,
             character=None):
         super(SDLStatusBar, self).__init__(character)
 
         self.pos_x = pos_x
         self.pos_y = pos_y
+        self.width = bar_width
         self.basic_font = basicFont
         self.world_map = world_map
         self.windowSurface = windowSurface
+        self.rect = pygame.Rect(self.pos_x, self.pos_y,
+                        self.width, SDLUserInterface.STATUSBAR_HEIGHT)
 
     def show(self):
-        self.textRect = self.text.get_rect()
-        self.textRect.topleft = (self.pos_x, self.pos_y)
-        self.windowSurface.blit(self.text, self.textRect)
+        self.render_text()
 
     def set_character(self, character):
         self.character = character
         # XXX self.set_message()
 
     def render_text(self):
+        pygame.draw.rect(self.windowSurface, self.text_bg, self.rect)
         self.text = self.basic_font.render(self.text_msg, True,
                 self.text_fg, self.text_bg)
+        self.windowSurface.blit(self.text, self.rect)
+
 
     def set_message(self, msg=''):
         self.text_msg = msg
@@ -236,9 +280,9 @@ class SDLStatusBar(StatusBar):
 
 class SDLTopBar(SDLStatusBar):
     def __init__(self, basicFont, windowSurface, world_map,
-            pos_x=0, pos_y=0, character=None):
+            bar_width, pos_x=0, pos_y=0, character=None):
         super(SDLTopBar, self).__init__(basicFont, windowSurface, world_map,
-                pos_x=pos_x, pos_y=pos_y, character=character)
+                bar_width, pos_x=pos_x, pos_y=pos_y, character=character)
 
         self.text_fg = SDLUserInterface.WHITE
         self.text_bg = SDLUserInterface.BLUE
@@ -247,13 +291,12 @@ class SDLTopBar(SDLStatusBar):
 
 class SDLBottomBar(SDLStatusBar):
     def __init__(self, basicFont, windowSurface, world_map,
-            pos_x, pos_y, character=None):
+            bar_width, pos_x, pos_y, character=None):
         super(SDLBottomBar, self).__init__(basicFont, windowSurface, world_map,
-                pos_x=pos_x, pos_y=pos_y, character=character)
+                bar_width, pos_x=pos_x, pos_y=pos_y, character=character)
 
         self.text_fg = SDLUserInterface.WHITE
         self.text_bg = SDLUserInterface.RED
-        self.set_message('Use arrow keys to move, "a" to attack and "x" to exit')
 
 
 ##
@@ -287,6 +330,8 @@ class SDLCharacter(classes.Character):
         hp = int(attributes[2])
         super(SDLCharacter, self).__init__(ui, pos_x, pos_y, hp)
         self.windowSurface = ui.windowSurface
+        self.font = pygame.font.SysFont(None, SDLUserInterface.FONT_SIZE)
+
 
     def is_player(self):
         if self.text == SDLUserInterface.CHR_TXT_PLAYER:
@@ -304,7 +349,10 @@ class SDLCharacter(classes.Character):
                         SDLUserInterface.CHR_SIZE,
                         SDLUserInterface.CHR_SIZE)
         pygame.draw.rect(self.windowSurface, self.color, self.rect)
-        pygame.display.update()
+
+        self.text_overlay = self.font.render(self.text, True,
+                                SDLUserInterface.CHR_COLOR_BACKGROUND, self.color)
+        self.windowSurface.blit(self.text_overlay, self.rect)
 
     def get_label(self):
         return self.text

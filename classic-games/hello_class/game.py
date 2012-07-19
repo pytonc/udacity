@@ -55,7 +55,7 @@ if __name__ == '__main__':
     else:
         game = HelloGame(config)
 
-    game.start_game("Level1")
+    game.start_game()
     sys.exit(0)
 
 # vim: expandtab tabstop=4 shiftwidth=4 softtabstop=4
