@@ -149,8 +149,7 @@ class SDLUserInterface(UserInterface):
 
         # Build the WorldMap
         self.world_map = SDLWorldMap(self.windowSurface,
-                            map_x, map_y,
-                            width, height)
+                            width, height, map_x, map_y)
 
         # Build the topbar
         self.topbar = SDLTopBar(basicFont,
@@ -222,7 +221,6 @@ class SDLUserInterface(UserInterface):
                             self.student.attack(bug)
                             bug.act(self.student,
                                     SDLUserInterface.DIRECTIONS)
-                        self.draw_window()
 
             if self.exit_loop() == True:
                 print "Exiting the loop"
@@ -264,7 +262,6 @@ class SDLStatusBar(StatusBar):
 
     def set_character(self, character):
         self.character = character
-        # XXX self.set_message()
 
     def render_text(self):
         pygame.draw.rect(self.windowSurface, self.text_bg, self.rect)
@@ -303,15 +300,17 @@ class SDLBottomBar(SDLStatusBar):
 # UI representation of the WorldMap
 ##
 class SDLWorldMap(classes.WorldMap):
-    def __init__(self, pos_x, pos_y, windowSurface, width, height):
+    def __init__(self, windowSurface, width, height, offset_x=0, offset_y=0):
         super(SDLWorldMap, self).__init__(width, height)
+        self.offset_x = offset_x
+        self.offset_y = offset_y
 
     def print_map(self):
         for y in range(self.height):
             for x in range(self.width):
                 cell = self.map[x][y]
                 if cell is not None:
-                    cell.show()
+                    cell.show(self.offset_x, self.offset_y)
 
     def add_character(self, character):
         self.map[character.x][character.y] = character
@@ -343,9 +342,9 @@ class SDLCharacter(classes.Character):
         self.color = SDLUserInterface.CHR_COLOR_DEAD
         self.hp = 0
 
-    def show(self):
-        self.rect = pygame.Rect(self.x * SDLUserInterface.CHR_SIZE,
-                        self.y * SDLUserInterface.CHR_SIZE,
+    def show(self, offset_x=0, offset_y=0):
+        self.rect = pygame.Rect(self.x * SDLUserInterface.CHR_SIZE + offset_x,
+                        self.y * SDLUserInterface.CHR_SIZE + offset_y,
                         SDLUserInterface.CHR_SIZE,
                         SDLUserInterface.CHR_SIZE)
         pygame.draw.rect(self.windowSurface, self.color, self.rect)
