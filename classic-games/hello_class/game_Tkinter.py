@@ -62,7 +62,7 @@ class mapGUI(Frame):  #based on Frame from Tkinter
                 self.tilesImg.append(ImageTk.PhotoImage(imgTemp))
 
             map_to_use = "map2.png"
-            steps = 4
+            steps = 8
 
 
     #--- PRINT STATUS TEXT ---
@@ -77,7 +77,7 @@ class mapGUI(Frame):  #based on Frame from Tkinter
         #instruction text
         self.mapCanvas.create_text(10, world.height*16+30, anchor=W, font="Arial", text="Moving: <Up> <Down> <Left> <Right>  |  Attack: [a]  |  GPS: [g]  |  HP: [h]")
 
-        for x in range(0, world.width):
+        for x in range(0, (3* world.width/4)):
             for y in range(0, world.height):    #loop through each cell
                 cell = world.map[x][y]          #temporary placeholder of object in cell
 
@@ -116,18 +116,67 @@ class mapGUI(Frame):  #based on Frame from Tkinter
                         self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[17], anchor = NW)
                     else:   # for X, when bugs die
                         self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[6], anchor = NW)
-                except:
 
+                except:
                     pass
+
+        for x in range((3 * world.width/4), world.width):
+            for y in range(0, world.height):
+                cell = world.map[x][y]
+                try:
+                    if cell is None:
+                        self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[0], anchor = NW)
+                    elif cell.image == 'S':
+                        self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[2], anchor = NW)
+                    elif cell.image == 'W':
+                        self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[3], anchor = NW)
+                    elif cell.image == 'A':
+                        self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[4], anchor = NW)
+                    elif cell.image == 'B':
+                        self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[5], anchor = NW)
+                    elif cell.image == 'F':
+                        self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[7], anchor = NW)
+                    elif cell.image == 'T':
+                        self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[21], anchor = NW)
+                    elif cell.image == 'L':
+                        self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[19], anchor = NW)
+                    elif cell.image == 'GC':
+                        self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[10], anchor = NW)
+                    elif cell.image == 'RC':
+                        self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[11], anchor = NW)
+                    elif cell.image == 'G':
+                        self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[12], anchor = NW)
+                    elif cell.image == 'WL':
+                        self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[13], anchor = NW)
+                    elif cell.image == 'TLR':
+                        self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[15], anchor = NW)
+                    elif cell.image == 'TLG':
+                        self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[14], anchor = NW)
+                    elif cell.image == 'BF':
+                        self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[16], anchor = NW)
+                    elif cell.image == 'H':
+                        self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[17], anchor = NW)
+                    elif cell.image == 'MT':
+                        self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[18], anchor = NW)
+                    elif cell.image == 'FG':
+                        self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[20], anchor = NW)
+                    else:   # for X, when bugs die
+                        self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[6], anchor = NW)
+
+                except:
+                    pass
+
+
 #Create objects
 student = Player(11, 12)
 engineer1 = Wizard(35, 13)
-engineer2 = Wizard(56,21)
-bug1 = Enemy(55,12)
-bug2 = Enemy(20, 15)
+engineer2 = Wizard(22,13)
+bug1 = Enemy(14,19)
+bug2 = Enemy(15, 15)
 
 fountain1 = Fountains((world.width/8)-4, (world.height/2)-2)
 fountain2 = Fountains((world.width/8)-3, (world.height/2)+2)
+fountain3 = Fountains(6 * world.width/7 + random.randint(-3,8), world.height/2 + random.randint(-10,10) )
 trees = Tree(random.randint(1,world.width-1), random.randint(1,world.height-1), 6)
 leafs = Leaf_Tree( random.randint(1,world.width-1), random.randint(1,world.height-1), 6)
 green_car = Car(random.randint(1,world.width-1), random.randint(1,world.height-1), 'GC')
@@ -137,6 +186,8 @@ wall = Wall((world.width/6), (world.height/2 + 1))
 tr_light = Traffic_Light((world.width/6), (world.height/2)-1)
 butterfly = Butterfly(20,17)
 house = House((world.width/8)-3, (world.height/2), student)
+mountains = Mountain(3 * world.width/4, 0)
+flag = Flag(3 * world.width/4, world.height/2 +1)
 
 
 statusbar.set_character(student)
@@ -163,6 +214,8 @@ def move_others():
 def move_student(event):
     direction = event.keysym.lower()
     student.move_player(direction, ('H', 'G'))
+    if student.x > (3 * world.width/4):
+        student.hp -=5
     move_enemies()
     move_others()
     mainMapGUI.paintMap(None)
@@ -182,7 +235,6 @@ def student_sleep(event):
     else:
         tempStr= "You can't sleep outside, it's too cold! Go home!"
         mainMapGUI.printText(tempStr)
-
 
 def attack(event):
     enemies = student.get_alive_enemies(1)

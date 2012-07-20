@@ -12,12 +12,14 @@ CHR = {
 'CHR_MONK'                : "M"     ,
 'CHR_TREE'                : "T"     ,
 'CHR_LEAF'                : "L"     ,
-'CHR_GATE'                : "G"    ,
+'CHR_GATE'                : "G"     ,
 'CHR_WALL'                : "WL"    ,
 'CHR_TRAFFIC_LIGHT_RED'   : "TLR"   ,
 'CHR_TRAFFIC_LIGHT_GREEN' : "TLG"   ,
 'CHR_BUTTERFLY'           : "BF"    ,
-'CHR_HOUSE'               : "H"
+'CHR_HOUSE'               : "H"     ,
+'CHR_MOUNTAINS'           : "MT"    ,
+'CHR_FLAG'                : "FG"
 }
 DIRECTIONS = ["right", "left", "down", "up"]
 
@@ -146,7 +148,6 @@ class Gate(Facility):
         y_gates = self.y
         self.occupy(x_gates, y_gates)
 
-
 class Wall(Facility):
     def __init__(self, x, y):
         Facility.__init__(self,x, y, CHR['CHR_WALL'])
@@ -189,7 +190,7 @@ class Fountains(Facility):
     def heal(self, character):
         while True:
             if (self.distance(character) == (0,1) or self.distance(character) == (1,0)) or self.distance(character) == (1,1):
-                if self.hp == 0:
+                if self.hp <= 0:
                     print("I'm deeply sorry, but I'm empty :(")
                     break
                 else:
@@ -209,10 +210,27 @@ class Fountains(Facility):
                             character.items = []
                             character.hp = character.max_hp
                             character.image = CHR['CHR_PLAYER']
+                            self.hp -= 100
                         break
             else:
                 return None
                 break
+
+class Mountain(Facility):
+    def __init__(self, x, y):
+        Facility.__init__(self, x, y, CHR['CHR_MOUNTAINS'])
+        mt_f, mt_s = 1, 1
+        for mountains in range(world.height/2 - 2):
+            self.occupy(x,y + mt_f)
+            mt_f+=1
+        for mountains in range(world.height/2 - 2):
+            self.occupy(x, world.height - mt_s)
+            mt_s +=1
+
+class Flag(Facility):
+    def __init__(self, x, y):
+        Facility.__init__(self, x, y, CHR['CHR_FLAG'])
+        self.occupy(3 * world.width/4, world.height/2 - 1)
 
 class Character(Entity):
     def __init__(self, x, y, image, damage, hp = 100):
