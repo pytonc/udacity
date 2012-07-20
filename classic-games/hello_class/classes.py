@@ -6,18 +6,20 @@ CHR = {
 'CHR_PLAYER'              : "S"     ,
 'CHR_ENEMY'               : "B"     ,
 'CHR_WIZARD'              : "W"     ,
-'CHR_ARCHER'              : "A"     ,
+'CHR_DOG'                 : "D"     ,
 'CHR_DEAD'                : "X"     ,
 'CHR_FOUNTAIN'            : "F"     ,
 'CHR_MONK'                : "M"     ,
 'CHR_TREE'                : "T"     ,
 'CHR_LEAF'                : "L"     ,
-'CHR_GATE'                : "G"    ,
+'CHR_GATE'                : "G"     ,
 'CHR_WALL'                : "WL"    ,
 'CHR_TRAFFIC_LIGHT_RED'   : "TLR"   ,
 'CHR_TRAFFIC_LIGHT_GREEN' : "TLG"   ,
 'CHR_BUTTERFLY'           : "BF"    ,
-'CHR_HOUSE'               : "H"
+'CHR_HOUSE'               : "H"     ,
+'CHR_MOUNTAINS'           : "MT"    ,
+'CHR_FLAG'                : "FG"
 }
 DIRECTIONS = ["right", "left", "down", "up"]
 
@@ -103,6 +105,12 @@ class Entity:
         except AttributeError:
             return None
 
+    def around(self, character, cells):
+        return (abs(self.distance_x(character)) <= cells and abs(self.distance_y(character)) <= cells )
+
+    def not_around(self, character, cells):
+        return abs(self.distance_x(character)) >= cells or abs(self.distance_y(character)) >= cells
+
     def temp_list(self, l):
         tempList = []
         for e in l:
@@ -146,7 +154,6 @@ class Gate(Facility):
         y_gates = self.y
         self.occupy(x_gates, y_gates)
 
-
 class Wall(Facility):
     def __init__(self, x, y):
         Facility.__init__(self,x, y, CHR['CHR_WALL'])
@@ -189,7 +196,7 @@ class Fountains(Facility):
     def heal(self, character):
         while True:
             if (self.distance(character) == (0,1) or self.distance(character) == (1,0)) or self.distance(character) == (1,1):
-                if self.hp == 0:
+                if self.hp <= 0:
                     print("I'm deeply sorry, but I'm empty :(")
                     break
                 else:
@@ -209,13 +216,30 @@ class Fountains(Facility):
                             character.items = []
                             character.hp = character.max_hp
                             character.image = CHR['CHR_PLAYER']
+                            self.hp -= 100
                         break
             else:
                 return None
                 break
 
+class Mountain(Facility):
+    def __init__(self, x, y):
+        Facility.__init__(self, x, y, CHR['CHR_MOUNTAINS'])
+        mt_f, mt_s = 1, 1
+        for mountains in range(world.height/2 - 2):
+            self.occupy(x,y + mt_f)
+            mt_f+=1
+        for mountains in range(world.height/2 - 2):
+            self.occupy(x, world.height - mt_s)
+            mt_s +=1
+
+class Flag(Facility):
+    def __init__(self, x, y):
+        Facility.__init__(self, x, y, CHR['CHR_FLAG'])
+        self.occupy(3 * world.width/4, world.height/2 - 1)
+
 class Character(Entity):
-    def __init__(self, x, y, image, damage, hp = 100):
+    def __init__(self, x, y, image, damage, hp = 100, hp_max = 100):
         Entity.__init__(self, x, y, image)
         self.hp, self.max_hp = hp, hp
         self.damage = damage
@@ -292,7 +316,7 @@ class Character(Entity):
                     break
 
     def hunt(self, character, directions, steps):
-        while self.hp != 0:
+        while True:
             #While alive, enemy, if player is not close enough (if so, it attaks),
             #find where to go to find the player out. Enemy is looking for player until player is in the next cell.
             #Steps here for Wizard, Archer and others. They have their out range for attak
@@ -300,6 +324,24 @@ class Character(Entity):
                 self.attack(character)
                 break
             elif (self.distance_x(character) >  steps):
+                self.move(directions['r'])
+                break
+            elif (self.distance_x(character) < -steps):
+                self.move(directions['l'])
+                break
+            elif (self.distance_y(character) >  steps):
+                self.move(directions['u'])
+                break
+            elif (self.distance_y(character) < -steps):
+                self.move(directions['d'])
+                break
+            else:
+                self.stay()
+                break
+
+    def follow(self, character, directions, steps):     #The same as hunt, but without attacking. One step from delict! :)
+        while True:
+            if (self.distance_x(character) >  steps):
                 self.move(directions['r'])
                 break
             elif (self.distance_x(character) < -steps):
@@ -332,11 +374,11 @@ class Character(Entity):
                 # Possible damage is depending on physical condition
                 worst = int((self.condition() * 0.01) ** (1/2.) * self.damage + 0.5)
                 best = int((self.condition() * 0.01) ** (1/4.) * self.damage + 0.5)
-                damage = (worst == best) and best or random.randrange(worst, best)
+                damage = (worst == best) and best or random.randint(worst, best)
 
                     # Possible damage is also depending on sudden adrenaline
                     # rushes and aiming accuracy or at least butterfly flaps
-                damage = random.randrange(
+                damage = random.randint(
                         (damage-1, 0)[not damage],
                         (damage+1, self.damage)[damage == self.damage])
                 enemy.harm(damage)
@@ -373,7 +415,7 @@ class Character(Entity):
                 enemies.append(world.map[x][y])
         return enemies
 
-    def get_all_enemies(self, max_dist=1):
+    def get_all_enemies(self, max_dist):
         """Return a list of all enemies that are at most 'max_dist' cells away
         either horizontally or vertically.
         """
@@ -389,12 +431,21 @@ class Character(Entity):
         enemies = self.get_all_enemies_at_distance(dist)
         return [enemy for enemy in enemies if enemy.hp > 0]
 
-    def get_alive_enemies(self, max_dist=1):
+    def get_alive_enemies(self, max_dist):
         """Return a list of alive enemies that are at most 'max_dist' cells away
         either horizontally or vertically.
         """
         enemies = self.get_all_enemies(max_dist)
         return [enemy for enemy in enemies if enemy.hp > 0]
+
+    def get_alive_enemies_around(self, enemies, cells):
+        existance = []
+        boolean = False
+        for character in enemies:
+            if self.around(character, cells): #and character.hp != 0:
+                existance.append(character)
+                boolean = True
+        return existance, boolean
 
 class Player(Character):
     def __init__(self, x, y):
@@ -415,7 +466,7 @@ class Enemy(Character):
         choices = [1, 2]
         choice = random.choice(choices)
         #Enemy has poor eyes :(.
-        if (self.distance_x(character) > 10 or self.distance_x(character) < -10 or self.distance_y(character) > 10 or self.distance_y(character) < -10) or character.hp == 0:
+        if self.not_around(character, 10)  or character.hp == 0:
             self.haotic_move(directions)
         else:
             #If character is weak or enemy is strong, without panic.
@@ -453,7 +504,7 @@ class Butterfly(Minor_Characters):
 
     def fly(self, character, directions):
         while True:
-            if self.distance_x(character) <=2 or self.distance_x(character) >= -2 or self.distance_y(character) <= 2 or self.distance_y(character) >=-2:
+            if self.around(character, 2):
                 new_x = (self.x + random.randint(-3,3))  % world.width
                 new_y = (self.y + random.randint(-3,3))  % world.height
                 if world.is_occupied(new_x, new_y):
@@ -467,11 +518,9 @@ class Butterfly(Minor_Characters):
             else:
                 self.haotic_move(directions)
 
-
 class Car(Minor_Characters):
     def __init__(self, x, y, image ):
         Minor_Characters.__init__(self, x, y, image, damage=0)
-
 
 class Wizard(Minor_Characters):
     def __init__(self, x, y, mana = 100):
@@ -512,18 +561,33 @@ class Wizard(Minor_Characters):
             else:
                 self.act(character, directions, steps)
 
-class Archer(Minor_Characters):
+class Dog(Minor_Characters):
     def __init__(self, x, y):
-        Minor_Characters.__init__(self, x, y, CHR['CHR_ARCHER'], damage = 3)
+        Minor_Characters.__init__(self, x, y, CHR['CHR_DOG'], damage = 7)
 
-    def range_attack(self, enemy):
-        dist = self.distance(enemy)
-        if (dist[0] <= 5 and dist[1] == 0) or (dist[0] == 0 and dist[1] <= 5):
-            enemy.harm(5)
+    def act_Dog(self, owner, enemies, directions):
+        if self.hp <= 0:
+                return False
+
+        existance = self.get_alive_enemies_around(enemies, 3)
+
+        if owner.hp <= 0:
+            self.hp -= 50
+            if enemies[0].hp !=0:
+                self.act(enemies[0], directions, 1)
+            elif enemies[1].hp !=0:
+                self.act(enemies[1], directions, 1)
+            else:
+                self.walk(directions)
+        else:
+            if existance[1]:
+                self.act(random.choice(existance[0]), directions, 1)
+            else:
+                self.follow(owner, directions, 1)
 
 class Monk(Minor_Characters):
     def __init__(self, x, y, mana=100):
-        Minor_Characters.__init__(self, x, y, CHR['CHR_ENEMY_MONK'], damage = 0)
+        Minor_Characters.__init__(self, x, y, CHR['CHR_MONK'], damage = 0)
         self.mana = mana
 
     def heal(self, friend):
@@ -531,4 +595,15 @@ class Monk(Minor_Characters):
         friend.hp +=5
         self.mana -=5
 
+    def act_Monk(self, friend, directions):
+        if self.mana >= 5:
+            if self.around(friend, 10):
+                if friend.hp < friend.max_hp and friend.hp != 0:
+                    self.heal(friend)
+                else:
+                    self.walk(directions)
+            else:
+                self.walk(directions)
+        else:
+            self.walk(directions)
 
