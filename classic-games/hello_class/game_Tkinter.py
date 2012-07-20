@@ -88,7 +88,7 @@ class mapGUI(Frame):  #based on Frame from Tkinter
                         self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[2], anchor = NW)
                     elif cell.image == 'W':
                         self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[3], anchor = NW)
-                    elif cell.image == 'A':
+                    elif cell.image == 'D':
                         self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[4], anchor = NW)
                     elif cell.image == 'B':
                         self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[5], anchor = NW)
@@ -132,7 +132,7 @@ class mapGUI(Frame):  #based on Frame from Tkinter
                         self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[2], anchor = NW)
                     elif cell.image == 'W':
                         self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[3], anchor = NW)
-                    elif cell.image == 'A':
+                    elif cell.image == 'D':
                         self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[4], anchor = NW)
                     elif cell.image == 'B':
                         self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[5], anchor = NW)
@@ -172,12 +172,13 @@ class mapGUI(Frame):  #based on Frame from Tkinter
 
 
 #Create objects
-student = Player(11, 12)
+student = Player(11, 20)
 engineer1 = Wizard(35, 13)
 engineer2 = Wizard(22,13)
-bug1 = Enemy(14,19)
-bug2 = Enemy(15, 15)
+bug1 = Enemy(40,11)
+bug2 = Enemy(39, 11)
 monk = Monk(14,20)
+dog = Dog(11,13)
 
 fountain1 = Fountains((world.width/8)-4, (world.height/2)-2)
 fountain2 = Fountains((world.width/8)-3, (world.height/2)+2)
@@ -202,10 +203,11 @@ statusbar.set_character(student)
 #=============================================
 def move_enemies():
     bug1.act(student, DIRECTIONS)
-    bug2.act(engineer2, DIRECTIONS)
+    bug2.act(student, DIRECTIONS)
 
 def move_others():
     gates.open_close(student)
+    dog.act_Dog(student, [bug1,bug2], DIRECTIONS)
     engineer1.act_Wizard(bug2, DIRECTIONS)
     engineer2.act_Wizard(bug2, DIRECTIONS)
     monk.act_Monk(student, DIRECTIONS)
@@ -219,11 +221,11 @@ def move_others():
 
 def move_student(event):
     direction = event.keysym.lower()
+    move_others()
     student.move_player(direction, ('H', 'G'))
     if student.x > (3 * world.width/4):
         student.hp -=5
     move_enemies()
-    move_others()
     mainMapGUI.paintMap(None)
 
 def student_sleep(event):
@@ -250,6 +252,7 @@ def attack(event):
     else:
         tempStr = "There is no any enemy around."
     tempStr = "Bug1 now has: " + str(bug1.hp) + " hp left" + "  and Bug2 now has: " + str(bug2.hp) + " hp left"
+    move_others()
     mainMapGUI.printText(tempStr)
 
 def gps(event):
