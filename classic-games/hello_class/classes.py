@@ -233,7 +233,7 @@ class Flag(Facility):
         self.occupy(3 * world.width/4, world.height/2 - 1)
 
 class Character(Entity):
-    def __init__(self, x, y, image, damage, hp = 100):
+    def __init__(self, x, y, image, damage, hp = 100, hp_max = 100):
         Entity.__init__(self, x, y, image)
         self.hp, self.max_hp = hp, hp
         self.damage = damage
@@ -350,11 +350,11 @@ class Character(Entity):
                 # Possible damage is depending on physical condition
                 worst = int((self.condition() * 0.01) ** (1/2.) * self.damage + 0.5)
                 best = int((self.condition() * 0.01) ** (1/4.) * self.damage + 0.5)
-                damage = (worst == best) and best or random.randrange(worst, best)
+                damage = (worst == best) and best or random.randint(worst, best)
 
                     # Possible damage is also depending on sudden adrenaline
                     # rushes and aiming accuracy or at least butterfly flaps
-                damage = random.randrange(
+                damage = random.randint(
                         (damage-1, 0)[not damage],
                         (damage+1, self.damage)[damage == self.damage])
                 enemy.harm(damage)
@@ -541,7 +541,7 @@ class Archer(Minor_Characters):
 
 class Monk(Minor_Characters):
     def __init__(self, x, y, mana=100):
-        Minor_Characters.__init__(self, x, y, CHR['CHR_ENEMY_MONK'], damage = 0)
+        Minor_Characters.__init__(self, x, y, CHR['CHR_MONK'], damage = 0)
         self.mana = mana
 
     def heal(self, friend):
@@ -549,4 +549,15 @@ class Monk(Minor_Characters):
         friend.hp +=5
         self.mana -=5
 
+    def act_Monk(self, friend, directions):
+        if self.mana >= 5:
+            if self.distance_x(friend) > 10 or self.distance_x(friend) < -10 or self.distance_y(friend) > 10 or self.distance_y(friend) < -10:
+                if friend.hp < friend.hp_max and friend.hp != 0:
+                    self.heal(friend)
+                else:
+                    self.walk(directions)
+            else:
+                self.walk(directions)
+        else:
+            self.walk(directions)
 

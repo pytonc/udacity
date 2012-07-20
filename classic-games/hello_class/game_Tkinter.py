@@ -62,7 +62,7 @@ class mapGUI(Frame):  #based on Frame from Tkinter
                 self.tilesImg.append(ImageTk.PhotoImage(imgTemp))
 
             map_to_use = "map2.png"
-            steps = 8
+            steps = 9
 
 
     #--- PRINT STATUS TEXT ---
@@ -114,6 +114,8 @@ class mapGUI(Frame):  #based on Frame from Tkinter
                         self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[16], anchor = NW)
                     elif cell.image == 'H':
                         self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[17], anchor = NW)
+                    elif cell.image == 'M':
+                        self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[22], anchor = NW)
                     else:   # for X, when bugs die
                         self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[6], anchor = NW)
 
@@ -160,6 +162,8 @@ class mapGUI(Frame):  #based on Frame from Tkinter
                         self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[18], anchor = NW)
                     elif cell.image == 'FG':
                         self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[20], anchor = NW)
+                    elif cell.image == 'M':
+                        self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[22], anchor = NW)
                     else:   # for X, when bugs die
                         self.mapCanvas.create_image(x*16, (world.height - 1 - y)*16, image = self.tilesImg[6], anchor = NW)
 
@@ -173,6 +177,7 @@ engineer1 = Wizard(35, 13)
 engineer2 = Wizard(22,13)
 bug1 = Enemy(14,19)
 bug2 = Enemy(15, 15)
+monk = Monk(14,20)
 
 fountain1 = Fountains((world.width/8)-4, (world.height/2)-2)
 fountain2 = Fountains((world.width/8)-3, (world.height/2)+2)
@@ -203,6 +208,7 @@ def move_others():
     gates.open_close(student)
     engineer1.act_Wizard(bug2, DIRECTIONS)
     engineer2.act_Wizard(bug2, DIRECTIONS)
+    monk.act_Monk(student, DIRECTIONS)
     fountain1.heal(student)
     fountain2.heal(student)
     green_car.walk(DIRECTIONS)
