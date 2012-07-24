@@ -1,6 +1,12 @@
 #!/usr/bin/env python
 # game.py - simple game to demonstrate classes and objects
+
+# Hacked by MikeGoldberg to use Pygame
+# Mon Jul 16 12:51:31 CDT 2012
+
 import random
+import pygame
+
 
 CHR_PLAYER = "S"
 CHR_ENEMY = "B"
@@ -8,26 +14,40 @@ CHR_WIZARD = "W"
 CHR_ARCHER = "A"
 CHR_DEAD = "X"
 
+# Pygame constants
+WORLD_MAX_H = 60
+WORLD_MAX_V = 22
+BLOCK_SIZE = 10
+COLOR_PLAYER = (0, 0, 255)
+COLOR_ENEMY = (255, 0, 0)
+COLOR_WIZARD = (0, 255, 0)
+COLOR_ARCHER = (255, 0, 255)
+COLOR_DEAD = (0, 0, 0)
+
 class StatusBar(object):
     def __init__(self, character = None):
         self.character = character
         self.msg = ''
-    
+
     def set_character(self, character):
         self.character = character
         self.set_status()
         self.show()
-        
+
     def set_status(self, msg = ''):
         self.msg = (msg, '::'.join((self.msg, msg)))[len(self.msg) > 0]
+        print self.character.hp
+        print self.character.max_hp
+
         status = "HP: %i/%i" % (self.character.hp, self.character.max_hp)
         msgs = self.msg.split('::')
-        
+
         self.line1 = "%s + %s" % (status, msgs[0])
         if len(msgs) > 1:
             self.line2 = "%s + %s" % (' ' * len(status), msgs[1])
         else:
             self.line2 = "%s + %s" % (' ' * len(status), ' ' * len(msgs[0]))
+
 
     def format_line(self, txt, width):
         line = "+ %s" % txt
@@ -66,17 +86,34 @@ class WorldMap(object):
             print line + '+'
         print '+' * (self.width + 2)
 
-world = WorldMap(60, 22)
+world = WorldMap(WORLD_MAX_H, WORLD_MAX_V)
 
 #world = [[None for x in range(100)] for y in range(100)]
 
 class Entity:
-    def __init__(self, x, y, image):
+    def __init__(self, x, y, image, screen):
+        print 'Entity',x,y,image,screen
         self.x = x
         self.y = y
         world.map[x][y] = self
         self.image = image
-    
+
+        # Pygame sprite initialization
+        if image == 'S':
+            self.sprite_color = COLOR_PLAYER
+        elif image == 'B':
+            self.sprite_color = COLOR_ENEMY
+        elif image == 'W':
+            self.sprite_color = COLOR_WIZARD
+        elif image == 'A':
+            self.sprite_color = COLOR_ARCHER
+        else:
+            self.sprite_color = COLOR_DEAD
+        self.sprite = pygame.Surface((BLOCK_SIZE - 1, BLOCK_SIZE - 1))
+        self.sprite.fill(self.sprite_color)
+        self.screen = screen
+        self.screen.blit(self.sprite, (10*self.x, 21*self.y))
+
     def occupy(self, x, y):
         world.map[x][y] = self
 
@@ -87,11 +124,15 @@ class Entity:
         return abs(other.x - self.x), abs(other.y - self.y)
 
 class Character(Entity):
-    def __init__(self, x, y, image, hp, damage = 10):
-        Entity.__init__(self, x, y, image)
+    def __init__(self, x, y, image, screen, hp, damage = 10 ):
+        print 'Character', x,y,image,screen,hp
+        print 'type(screen)', type(screen)
+        Entity.__init__(self, x, y, image, screen)
         self.hp, self.max_hp = hp, hp
         self.damage = damage
         self.items = []
+
+
 
     def _direction_to_dxdy(self, direction):
         """Convert a string representing movement direction into a tuple
@@ -110,8 +151,8 @@ class Character(Entity):
 
     def new_pos(self, direction):
         '''
-            Calculates a new position given a direction. Takes as input a 
-            direction 'left', 'right', 'up' or 'down'. Allows wrapping of the 
+            Calculates a new position given a direction. Takes as input a
+            direction 'left', 'right', 'up' or 'down'. Allows wrapping of the
             world map (eg. moving left from x = 0 moves you to x = -1)
         '''
         dx, dy = self._direction_to_dxdy(direction)
@@ -147,14 +188,14 @@ class Character(Entity):
                 worst = int((self.condition() * 0.01) ** (1/2.) * self.damage + 0.5)
                 best = int((self.condition() * 0.01) ** (1/4.) * self.damage + 0.5)
                 damage = (worst == best) and best or random.randrange(worst, best)
-                
+
                 # Possible damage is also depending on sudden adrenaline
                 # rushes and aiming accuracy or at least butterfly flaps
                 damage = random.randrange(
                     (damage-1, 0)[not damage],
                     (damage+1, self.damage)[damage == self.damage])
                 enemy.harm(damage)
-                
+
                 if enemy.image == CHR_PLAYER:
                     statusbar.set_status("You are being attacked: %i damage." % damage)
                 elif self.image == CHR_PLAYER:
@@ -170,7 +211,7 @@ class Character(Entity):
                 "Just scaring the hiding velociraptors..."
                 ]
             statusbar.set_status(random.choice(msgs))
-            
+
 
     def condition(self):
         return (self.hp * 100) / self.max_hp
@@ -181,67 +222,30 @@ class Character(Entity):
             self.image = CHR_DEAD
             self.hp = 0
 
-    def get_all_enemies_at_distance(self, dist):
-        """Return a list of all enemies that are exactly 'dist' cells away
-        either horizontally or vertically.
-        """
-        coords = [((self.x + dist) % world.width, self.y % world.height),
-                  ((self.x - dist) % world.width, self.y % world.height),
-                  (self.x % world.width, (self.y + dist) % world.height),
-                  (self.x % world.width, (self.y - dist) % world.height)]
-        enemies = []
-        for x, y in coords:
-            if world.is_occupied(x, y) and isinstance(world.map[x][y], Enemy):
-                enemies.append(world.map[x][y])
-        return enemies
-
-    def get_all_enemies(self, max_dist=1):
-        """Return a list of all enemies that are at most 'max_dist' cells away
-        either horizontally or vertically.
-        """
-        enemies = []
-        for dist in range(1, max_dist+1):
-            enemies.extend(self.get_all_enemies_at_distance(dist))
-        return enemies
-
-    def get_alive_enemies_at_distance(self, dist):
-        """Return a list of alive enemies that are exactly 'dist' cells away
-        either horizontally or vertically.
-        """
-        enemies = self.get_all_enemies_at_distance(dist)
-        return [enemy for enemy in enemies if enemy.hp > 0]
-
-    def get_alive_enemies(self, max_dist=1):
-        """Return a list of alive enemies that are at most 'max_dist' cells away
-        either horizontally or vertically.
-        """
-        enemies = self.get_all_enemies(max_dist)
-        return [enemy for enemy in enemies if enemy.hp > 0]
-
 class Player(Character):
-    def __init__(self, x, y, hp):
-        Character.__init__(self, x, y, CHR_PLAYER, hp)
-    
+    def __init__(self, x, y, screen, hp):
+        Character.__init__(self, x, y, CHR_PLAYER, screen, hp)
+
 class Enemy(Character):
-    def __init__(self, x, y, hp):
-        Character.__init__(self, x, y, CHR_ENEMY, hp)
+    def __init__(self, x, y, screen, hp):
+        Character.__init__(self, x, y, CHR_ENEMY, screen, hp)
 
     # not used
     def challenge(self, other):
         print "Let's fight!"
-        
+
     def act(self, character, directions):
         # No action if dead X-(
         if not self.hp:
             return False
-            
+
         choices = [0, 1]
-        
+
         dist = self.distance(character)
         if dist == (0, 1) or dist == (1, 0):
             choices.append(2)
         choice = random.choice(choices)
-        
+
         if choice == 1:
             # Running away
             while (True):
@@ -255,33 +259,24 @@ class Enemy(Character):
             self.attack(character)
 
 class Wizard(Character):
-    def __init__(self, x, y, hp):
-        Character.__init__(self, x, y, CHR_WIZARD, hp)
+    def __init__(self, x, y, screen, hp):
+        Character.__init__(self, x, y, CHR_WIZARD, screen, hp)
 
-    def cast_spell(self, name, target):
-        """Cast a spell on the given target."""
-        if name == 'remove':
-            self._cast_remove(target)
-        elif name == 'hp-stealer':
-            self._cast_hp_stealer(target)
-        else:
-            print "The wizard does not know the spell '{0}' yet.".format(name)
-
-    def _cast_remove(self, enemy):
+    def cast_spell(self, enemy):
         dist = self.distance(enemy)
         if dist == (0, 1) or dist == (1, 0):
             enemy.remove()
 
-    def _cast_hp_stealer(self, enemy):
+    def cast_hp_stealer(self, enemy):
         dist = self.distance(enemy)
-        if dist == (0, 3) or dist == (3, 0):
+        if dist == (0,3) or dist == (0,3):
             enemy.harm(3)
             self.hp += 3
 
 class Archer(Character):
-    def __init__(self, x, y, hp):
-        Character.__init__(self, x, y, CHR_ARCHER, hp)
-    
+    def __init__(self, x, y, screen, hp):
+        Character.__init__(self, x, y, CHR_ARCHER, screen, hp)
+
     def range_attack(self, enemy):
         dist = self.distance(enemy)
         if (dist[0] <= 5 and dist[1] == 0) or (dist[0] == 0 and dist[1] <= 5):
